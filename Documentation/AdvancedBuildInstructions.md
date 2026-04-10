@@ -17,7 +17,7 @@ directory to `Build/release` and then running `ninja <target>`:
 There are some optional features that can be enabled during compilation that are intended to help with specific types of development work or introduce experimental features. Currently, the following build options are available:
 - `ENABLE_ADDRESS_SANITIZER`: builds in runtime checks for memory corruption bugs (like buffer overflows and memory leaks) in Lagom test cases.
 - `ENABLE_MEMORY_SANITIZER`: enables runtime checks for uninitialized memory accesses in Lagom test cases.
-- `ENABLE_UNDEFINED_SANITIZER`: builds in runtime checks for [undefined behavior](https://en.wikipedia.org/wiki/Undefined_behavior) (like null pointer dereferences and signed integer overflows) in Lagom and Ladybird.
+- `ENABLE_UNDEFINED_SANITIZER`: builds in runtime checks for [undefined behavior](https://en.wikipedia.org/wiki/Undefined_behavior) (like null pointer dereferences and signed integer overflows) in Lagom and CryFox.
 - `UNDEFINED_BEHAVIOR_IS_FATAL`: makes all undefined behavior sanitizer errors non-recoverable. This option reduces the performance overhead of `ENABLE_UNDEFINED_SANITIZER`.
 - `ENABLE_COMPILER_EXPLORER_BUILD`: Skip building non-library entities in Lagom (this only applies to Lagom).
 - `ENABLE_FUZZERS`: builds [fuzzers](../Meta/Lagom/ReadMe.md#fuzzing) for various parts of the system.
@@ -102,33 +102,33 @@ file hashes.
 
 ## Building the Flatpak
 
-Ladybird has an in-tree Flatpak manifest that can be used to build a Flatpak package for Ladybird. The recommended way
+CryFox has an in-tree Flatpak manifest that can be used to build a Flatpak package for CryFox. The recommended way
 to build the Flatpak is to use the `flatpak-builder` tool, which is available in most distributions. See the
 [Flatpak setup documentation](https://flatpak.org/setup/) on how to configure your environment for user Flatpak
-builds, and to configure the Flathub repo. The Ladybird Flatpak manifest at
-`Meta/CMake/flatpak/org.ladybird.Ladybird.json` can be built with the following command:
+builds, and to configure the Flathub repo. The CryFox Flatpak manifest at
+`Meta/CMake/flatpak/org.cryfox.CryFox.json` can be built with the following command:
 
 ```bash
 flatpak-builder --user --force-clean --install-deps-from=flathub \
   --ccache --repo=Build/repo --install Build/flatpak \
-  Meta/CMake/flatpak/org.ladybird.Ladybird.json 
+  Meta/CMake/flatpak/org.cryfox.CryFox.json 
 ```
 
 This command will build the Flatpak bundle and install it into the local Flatpak repository at `Build/repo`. Expect this
-to take a long time, as it will download and build all the dependencies of Ladybird as well. `flatpak-builder` will drop
+to take a long time, as it will download and build all the dependencies of CryFox as well. `flatpak-builder` will drop
 caches and build files in `.flatpak-builder`, as well as in the two subfolders `Build/repo` and `Build/flatpak`.
 
 The Flatpak can be run with the following command:
 
 ```bash
-flatpak run --user org.ladybird.Ladybird
+flatpak run --user org.cryfox.CryFox
 ```
 
 In order to debug the Flatpak, you can pass the `--devel` and `--command=sh` flags to `flatpak run`. This will drop you
 into a shell in the Flatpak sandbox:
 
 ```bash
-flatpak run --user --command=sh --devel org.ladybird.Ladybird
+flatpak run --user --command=sh --devel org.cryfox.CryFox
 ```
 
 ## Debugging without any optimizations
@@ -196,7 +196,7 @@ cmake -B Build/release -DVULKAN_VALIDATION_LAYERS_DEBUG=ON
 
 and then build normally.
 
-When running Ladybird the message `Vulkan validation layers: active` will be visible during the creation of the VulkanContext if the Vulkan validation layers are properly setup.
+When running CryFox the message `Vulkan validation layers: active` will be visible during the creation of the VulkanContext if the Vulkan validation layers are properly setup.
 
 If instead `Vulkan validation layers: not available` appears then the system is most likely missing the validation layers. On Ubuntu adding the package `vulkan-validationlayers` will add them in, other distros may also have a package but the name could be different (for example, on Arch, Fedora and NixOS the name is `vulkan-validation-layers`.
 

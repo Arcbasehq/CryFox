@@ -1,74 +1,120 @@
 :root {
-    --indigo-10: #a5a6f2;
-    --indigo-20: #8a88eb;
-    --indigo-30: #6851d6;
-    --indigo-40: #553fc4;
-    --indigo-50: #4d37b8;
-    --indigo-60: #3c28a1;
-    --indigo-80: #301f82;
-    --indigo-100: #2a1373;
-    --indigo-300: #260f73;
-    --indigo-500: #1d0c59;
-    --indigo-900: #190c4a;
-    --indigo: var(--indigo-100);
+    font-family: "SerenitySans", sans-serif;
+}
 
-    --violet-10: #e0d4ff;
-    --violet-20: #cab5ff;
-    --violet-30: #c3abff;
-    --violet-40: #b496ff;
-    --violet-50: #ab8ef5;
-    --violet-60: #9d7cf2;
-    --violet-80: #936fed;
-    --violet-100: #8a64e5;
-    --violet-300: #8257e6;
-    --violet-500: #7a4ce6;
-    --violet-900: #6a39db;
-    --violet: var(--violet-100);
+@font-face {
+    font-family: "SerenitySans";
+    src: url("resource://fonts/SerenitySans-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
 
-    --slate-blue-10: #cbe0f7;
-    --slate-blue-20: #c1d9f5;
-    --slate-blue-30: #b6d2f2;
-    --slate-blue-40: #a8c8ed;
-    --slate-blue-50: #97bce6;
-    --slate-blue-60: #86add9;
-    --slate-blue-80: #77a1d1;
-    --slate-blue-100: #6d98cc;
-    --slate-blue-300: #5c8ecc;
-    --slate-blue-500: #5484bf;
-    --slate-blue-900: #4872a3;
-    --slate-blue: var(--slate-blue-100);
+@font-face {
+    font-family: "SerenitySans";
+    src: url("resource://fonts/SerenitySans-Regular.ttf");
+}
+
+:root {
+    --ddg-orange-10: #f9f0ea;
+    --ddg-orange-20: #f2dfd4;
+    --ddg-orange-40: #e8b9a0;
+    --ddg-orange-60: #dd8f68;
+    --ddg-orange-80: #d06a3d;
+    --ddg-orange-90: #c75f31;
+    --ddg-orange: var(--ddg-orange-80);
+
+    --charcoal-10: #f4f5f7;
+    --charcoal-20: #e6e8ec;
+    --charcoal-30: #d5d9df;
+    --charcoal-40: #b6bcc8;
+    --charcoal-50: #9aa2b0;
+    --charcoal-60: #7d8797;
+    --charcoal-70: #606a7a;
+    --charcoal-80: #4b5463;
+    --charcoal-90: #333a45;
+    --charcoal: var(--charcoal-70);
+
+    --mint-10: #eef6f3;
+    --mint-30: #cde7dd;
+    --mint-60: #6dbca6;
+    --mint-80: #3e9e86;
 }
 
 @media (prefers-color-scheme: light) {
     :root {
-        --text-color: #2f3640;
-        --toggle-background-color: #cccccc;
-        --secondary-button-color: #dddddd;
-        --secondary-button-hover: #e1e1e1;
-        --secondary-button-active: #e9e9e9;
+        --text-color: #1d2430;
+        --toggle-background-color: #cfd3da;
+        --secondary-button-color: #f0f1f4;
+        --secondary-button-hover: #e5e7eb;
+        --secondary-button-active: #d9dde4;
+        --input-background-color: #ffffff;
+        --border-color: #d5d9df;
+        --table-border: #d5d9df;
+        --table-row-odd: #f3f4f7;
+        --table-row-hover: #e7ebf0;
+        --tree-hover-color: #eceff4;
+        --tree-selected-color: #f2d6c6;
+        --empty-text-color: #6b7280;
+        --url-text-color: #4b5563;
+        --surface-color: #ffffff;
+        --surface-muted: #f7f8fa;
+        --accent-color: var(--ddg-orange-80);
+        --accent-strong: var(--ddg-orange-90);
+        --accent-soft: #f2e4db;
     }
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --text-color: #e0e0e0;
-        --toggle-background-color: #555555;
-        --secondary-button-color: #555555;
-        --secondary-button-hover: #505050;
-        --secondary-button-active: #444444;
+        --text-color: #e9edf3;
+        --toggle-background-color: #3b414c;
+        --secondary-button-color: #2a2f38;
+        --secondary-button-hover: #333943;
+        --secondary-button-active: #242a32;
+        --input-background-color: #1d222a;
+        --border-color: #343b46;
+        --table-border: #343b46;
+        --table-row-odd: #222731;
+        --table-row-hover: #2a303a;
+        --tree-hover-color: #2a3038;
+        --tree-selected-color: #4a3326;
+        --empty-text-color: #a0a7b2;
+        --url-text-color: #b3bac4;
+        --surface-color: #1b1f26;
+        --surface-muted: #20252d;
+        --accent-color: #cc6a3f;
+        --accent-strong: #d27a55;
+        --accent-soft: rgba(208, 106, 61, 0.2);
     }
 }
 
 * {
     color-scheme: light dark;
-    font-family: sans-serif;
-
     margin: 0;
     padding: 0;
 }
 
+html,
+body,
+input,
+textarea,
+select,
+button,
+label,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "SerenitySans", sans-serif !important;
+}
+
 body {
     color: var(--text-color);
+    background-color: var(--card-background-color, transparent);
 }
 
 .hidden {
@@ -103,23 +149,34 @@ button.secondary-button:active {
 
 button.primary-button {
     color: white;
-    background-color: var(--violet-100);
+    background-color: var(--accent-color);
+    border-radius: 999px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 button.primary-button:hover {
-    background-color: var(--violet-500);
+    background-color: var(--accent-strong);
 }
 
 button.primary-button:active {
-    background-color: var(--violet-900);
+    background-color: var(--ddg-orange-90);
 }
 
 button.primary-button:disabled {
-    background-color: var(--violet-60);
+    background-color: var(--ddg-orange-40);
+}
+
+button.primary-button:focus-visible,
+button.secondary-button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid rgba(242, 104, 34, 0.6);
+    outline-offset: 2px;
 }
 
 button.secondary-button {
     background-color: var(--secondary-button-color);
+    border-radius: 999px;
 }
 
 button.secondary-button:hover {
@@ -139,8 +196,10 @@ select {
 
     font-size: 14px;
 
-    border-radius: 4px;
-    padding: 10px 12px;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background-color: var(--input-background-color);
+    border: 1px solid var(--border-color);
 }
 
 input[type="number"]:focus,
@@ -148,7 +207,7 @@ input[type="search"]:focus,
 input[type="text"]:focus,
 input[type="url"]:focus,
 select:focus {
-    border-color: var(--violet-100);
+    border-color: var(--accent-color);
     outline: none;
 }
 
@@ -156,7 +215,7 @@ input[type="checkbox"] {
     width: 14px;
     height: 14px;
 
-    accent-color: var(--violet-100);
+    accent-color: var(--accent-color);
 
     outline: none;
 }
@@ -172,7 +231,7 @@ input[type="checkbox"][switch] {
 }
 
 input[type="checkbox"][switch]:checked {
-    background-color: var(--violet-100);
+    background-color: var(--accent-color);
 }
 
 input[type="checkbox"][switch]::before {

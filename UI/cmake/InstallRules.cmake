@@ -2,7 +2,7 @@
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-set(package Ladybird)
+set(package CryFox)
 
 set(ladybird_applications ladybird ${ladybird_helper_processes})
 
@@ -45,16 +45,16 @@ list(REMOVE_ITEM all_required_lagom_libraries ladybird)
 
 if (APPLE)
     # Fixup the app bundle and copy:
-    #   - Libraries from lib/ to Ladybird.app/Contents/lib
+    #   - Libraries from lib/ to CryFox.app/Contents/lib
     # Remove the symlink we created at build time for the lib directory first
     install(CODE "
-    file(REMOVE \${CMAKE_INSTALL_PREFIX}/bundle/Ladybird.app/Contents/lib)
+    file(REMOVE \${CMAKE_INSTALL_PREFIX}/bundle/CryFox.app/Contents/lib)
     set(lib_dir \${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
     if (IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
       set(lib_dir ${CMAKE_INSTALL_LIBDIR})
     endif()
 
-    set(contents_dir \${CMAKE_INSTALL_PREFIX}/bundle/Ladybird.app/Contents)
+    set(contents_dir \${CMAKE_INSTALL_PREFIX}/bundle/CryFox.app/Contents)
     file(COPY \${lib_dir} DESTINATION \${contents_dir})
   "
             COMPONENT ladybird_Runtime)
@@ -119,24 +119,24 @@ if (ENABLE_INSTALL_FREEDESKTOP_FILES)
         OUTPUT_VARIABLE GIT_HASH
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    configure_file("${FREEDESKTOP_RESOURCE_DIR}/org.ladybird.Ladybird.metainfo.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/org.ladybird.Ladybird.metainfo.xml" @ONLY)
+    configure_file("${FREEDESKTOP_RESOURCE_DIR}/org.cryfox.CryFox.metainfo.xml.in" "${CMAKE_CURRENT_BINARY_DIR}/org.cryfox.CryFox.metainfo.xml" @ONLY)
     install(FILES
-        "${FREEDESKTOP_RESOURCE_DIR}/org.ladybird.Ladybird.svg"
+        "${FREEDESKTOP_RESOURCE_DIR}/org.cryfox.CryFox.svg"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
         COMPONENT ladybird_Runtime
     )
     install(FILES
-        "${FREEDESKTOP_RESOURCE_DIR}/org.ladybird.Ladybird.desktop"
+        "${FREEDESKTOP_RESOURCE_DIR}/org.cryfox.CryFox.desktop"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
         COMPONENT ladybird_Runtime
     )
     install(FILES
-        "${FREEDESKTOP_RESOURCE_DIR}/org.ladybird.Ladybird.service"
+        "${FREEDESKTOP_RESOURCE_DIR}/org.cryfox.CryFox.service"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/dbus-1/services"
         COMPONENT ladybird_Runtime
     )
     install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/org.ladybird.Ladybird.metainfo.xml"
+        "${CMAKE_CURRENT_BINARY_DIR}/org.cryfox.CryFox.metainfo.xml"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
         COMPONENT ladybird_Runtime
     )

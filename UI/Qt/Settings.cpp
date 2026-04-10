@@ -14,7 +14,7 @@ namespace Ladybird {
 
 Settings::Settings()
 {
-    m_qsettings = make<QSettings>(QSettings::IniFormat, QSettings::UserScope, "Ladybird", "Ladybird", this);
+    m_qsettings = make<QSettings>(QSettings::IniFormat, QSettings::UserScope, "CryFox", "CryFox", this);
 }
 
 ByteString Settings::directory()

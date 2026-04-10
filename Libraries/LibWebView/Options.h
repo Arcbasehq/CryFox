@@ -103,7 +103,7 @@ enum class HTTPDiskCacheMode {
 
 struct RequestServerOptions {
     Vector<ByteString> certificates;
-    HTTPDiskCacheMode http_disk_cache_mode { HTTPDiskCacheMode::Disabled };
+    HTTPDiskCacheMode http_disk_cache_mode { HTTPDiskCacheMode::Partitioned };
     Optional<ByteString> resource_substitution_map_path;
 };
 
@@ -176,7 +176,7 @@ struct WebContentOptions {
     LogAllJSExceptions log_all_js_exceptions { LogAllJSExceptions::No };
     DisableSiteIsolation disable_site_isolation { DisableSiteIsolation::No };
     EnableIDLTracing enable_idl_tracing { EnableIDLTracing::No };
-    EnableMemoryHTTPCache enable_http_memory_cache { EnableMemoryHTTPCache::No };
+    EnableMemoryHTTPCache enable_http_memory_cache { EnableMemoryHTTPCache::Yes };
     ExposeExperimentalInterfaces expose_experimental_interfaces { ExposeExperimentalInterfaces::No };
     ExposeInternalsObject expose_internals_object { ExposeInternalsObject::No };
     ForceCPUPainting force_cpu_painting { ForceCPUPainting::No };

@@ -5,16 +5,20 @@
         <link rel="stylesheet" type="text/css" href="resource://ladybird/ladybird.css" />
         <link rel="stylesheet" type="text/css" href="resource://ladybird/about-pages/webui.css" />
         <style>
+            body {
+                font-family: "SerenitySans", sans-serif;
+            }
             @media (prefers-color-scheme: light) {
                 :root {
-                    --input-background-color: white;
-                    --border-color: #dcdde1;
+                    --input-background-color: var(--input-background-color, #f9fbfc);
+                    --border-color: var(--border-color, #d7e0e7);
                 }
             }
 
             @media (prefers-color-scheme: dark) {
                 :root {
-                    --border-color: #3d3d3d;
+                    --input-background-color: var(--input-background-color, #1f252a);
+                    --border-color: var(--border-color, #3b454f);
                 }
             }
 
@@ -311,7 +315,7 @@
             }
 
             .tab-button.active {
-                border-bottom-color: var(--violet-100);
+                border-bottom-color: var(--accent-color);
                 opacity: 1;
             }
 
@@ -327,10 +331,9 @@
     <body>
         <header>
             <picture>
-                <source srcset="resource://icons/128x128/app-browser.png" media="(prefers-color-scheme: dark)" />
-                <img src="resource://icons/128x128/app-browser-dark.png" />
+                <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
             </picture>
-            <h1>Ladybird Settings</h1>
+            <h1>CryFox Settings</h1>
         </header>
 
         <div class="tab-bar">
@@ -609,7 +612,6 @@
 
         <script>
             // FIXME: When we support per-glyph font fallbacks, replace these SVGs with analogous code points.
-            //        https://github.com/LadybirdBrowser/ladybird/issues/864
             const upwardArrowSVG =
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
             const downwardArrowSVG =

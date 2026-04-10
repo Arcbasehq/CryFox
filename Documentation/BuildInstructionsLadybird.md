@@ -1,4 +1,4 @@
-# Ladybird browser build instructions
+# CryFox browser build instructions
 
 ## Build Prerequisites
 
@@ -174,7 +174,7 @@ brew install qt
 
 ### Windows:
 
-WSL2 is the supported way to build Ladybird on Windows. A native build is also possible, however it is still experimental,
+WSL2 is the supported way to build CryFox on Windows. A native build is also possible, however it is still experimental,
 and there are several issues.
 
 #### WSL2
@@ -235,7 +235,7 @@ You may also choose to start it in `gdb` using:
 ./Meta/ladybird.py gdb ladybird
 ```
 
-The above commands will build a Release version of Ladybird. To instead build a Debug version, run the
+The above commands will build a Release version of CryFox. To instead build a Debug version, run the
 `Meta/ladybird.py` script with the value of the `BUILD_PRESET` environment variable set to `Debug`, like this:
 
 ```bash
@@ -249,7 +249,7 @@ If you want to run other applications, such as the JS REPL or the WebAssembly RE
 
 ### The User Interfaces
 
-Ladybird will be built with one of the following browser frontends, depending on the platform:
+CryFox will be built with one of the following browser frontends, depending on the platform:
 * [AppKit](https://developer.apple.com/documentation/appkit?language=objc) - The native UI on macOS.
 * [Qt](https://doc.qt.io/qt-6/) - The UI used on all other platforms.
 * [Android UI](https://developer.android.com/develop/ui) - The native UI on Android.
@@ -294,7 +294,7 @@ for more information.
 
 ### Resource files
 
-Ladybird requires resource files from the ladybird/Base/res directory in order to properly load
+CryFox requires resource files from the ladybird/Base/res directory in order to properly load
 icons, fonts, and other theming information. These files are copied into the build directory by
 special CMake rules. The expected location of resource files can be tweaked by packagers using
 the standard CMAKE_INSTALL_DATADIR variable. CMAKE_INSTALL_DATADIR is expected to be a path relative
@@ -310,7 +310,7 @@ The install rules in UI/cmake/InstallRules.cmake define which binaries and libra
 installed into the configured CMAKE_PREFIX_PATH or path passed to ``cmake --install``.
 
 Note that when using a custom build directory rather than Meta/ladybird.py, the user may need to provide a suitable C++
-compiler (see [Build Prerequisites](BuildInstructionsLadybird.md#build-prerequisites)) via the CMAKE_C_COMPILER and
+compiler (see [Build Prerequisites](#build-prerequisites)) via the CMAKE_C_COMPILER and
 CMAKE_CXX_COMPILER cmake options.
 
 ```
@@ -343,20 +343,20 @@ ninja -C Build/release debug-ladybird
 
 To run without ninja rule on non-macOS systems:
 ```
-./Build/release/bin/Ladybird
+./Build/release/bin/CryFox
 ```
 
 To run without ninja rule on macOS:
 ```
-open -W --stdout $(tty) --stderr $(tty) ./Build/release/bin/Ladybird.app
+open -W --stdout $(tty) --stderr $(tty) ./Build/release/bin/CryFox.app
 
 # Or to launch with arguments:
-open -W --stdout $(tty) --stderr $(tty) ./Build/release/bin/Ladybird.app --args https://ladybird.dev
+open -W --stdout $(tty) --stderr $(tty) ./Build/release/bin/CryFox.app --args https://cryfox.me
 ```
 
 ### Experimental GN build
 
-There is an experimental GN build for Ladybird. It is not officially supported, but it is kept up to date on a best-effort
+There is an experimental GN build for CryFox. It is not officially supported, but it is kept up to date on a best-effort
 basis by interested contributors. See the [GN build instructions](../Meta/gn/README.md) for more information.
 
 In general, the GN build organizes ninja rules in a more compact way than the CMake build, and it may be faster on some systems.
@@ -365,10 +365,10 @@ cross-compiling to other platforms.
 
 ### Debugging with CLion
 
-Ladybird should be built with debug symbols first. This can be done by adding `-DCMAKE_BUILD_TYPE=Debug` to the cmake command line,
+CryFox should be built with debug symbols first. This can be done by adding `-DCMAKE_BUILD_TYPE=Debug` to the cmake command line,
 or selecting the Build Type Debug in the CLion CMake profile.
 
-After running Ladybird as suggested above with `./Meta/ladybird.py run ladybird`, you can now in CLion use Run -> Attach to Process to connect. If debugging layout or rendering issues, filter the listing that opens for `WebContent` and attach to that.
+After running CryFox as suggested above with `./Meta/ladybird.py run ladybird`, you can now in CLion use Run -> Attach to Process to connect. If debugging layout or rendering issues, filter the listing that opens for `WebContent` and attach to that.
 
 Now breakpoints, stepping and variable inspection will work.
 
@@ -376,16 +376,16 @@ Now breakpoints, stepping and variable inspection will work.
 
 If all you want to do is use Instruments, then an Xcode project is not required.
 
-Simply run the `ladybird.py` script as normal, and then make sure to codesign the Ladybird binary with the proper entitlements to allow Instruments to attach to it.
+Simply run the `ladybird.py` script as normal, and then make sure to codesign the CryFox binary with the proper entitlements to allow Instruments to attach to it.
 
 ```
 ./Meta/ladybird.py build
  ninja -C Build/release apply-debug-entitlements
  # or
- codesign -s - -v -f --entitlements Meta/debug.plist Build/release/bin/Ladybird.app
+ codesign -s - -v -f --entitlements Meta/debug.plist Build/release/bin/CryFox.app
 ```
 
-Now you can open the Instruments app and point it to the Ladybird app bundle.
+Now you can open the Instruments app and point it to the CryFox app bundle.
 
 Building the project with Xcode is not supported. The Xcode project generated by CMake does not properly execute custom
 targets, and does not handle all target names in the project.

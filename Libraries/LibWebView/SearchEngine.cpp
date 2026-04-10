@@ -10,11 +10,11 @@
 namespace WebView {
 
 static auto s_builtin_search_engines = to_array<SearchEngine>({
-    { "Bing"_string, "https://www.bing.com/search?q=%s"_string },
-    { "Brave"_string, "https://search.brave.com/search?q=%s"_string },
+    { "Bing (Not good for privacy)"_string, "https://www.bing.com/search?q=%s"_string },
+    { "Brave (Unstable)"_string, "https://search.brave.com/search?q=%s"_string },
     { "DuckDuckGo"_string, "https://duckduckgo.com/?q=%s"_string },
     { "Ecosia"_string, "https://ecosia.org/search?q=%s"_string },
-    { "Google"_string, "https://www.google.com/search?q=%s"_string },
+    { "Google (Not good for privacy)"_string, "https://www.google.com/search?q=%s"_string },
     { "Kagi"_string, "https://kagi.com/search?q=%s"_string },
     { "Mojeek"_string, "https://www.mojeek.com/search?q=%s"_string },
     { "Startpage"_string, "https://startpage.com/search?q=%s"_string },

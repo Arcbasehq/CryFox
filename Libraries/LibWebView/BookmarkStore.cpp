@@ -122,24 +122,8 @@ static Vector<BookmarkItem> create_default_bookmarks()
         {
             .id = generate_random_uuid(),
             .data = BookmarkItem::Bookmark {
-                .url = URL::Parser::basic_parse("https://ladybird.org/"sv).release_value(),
-                .title = "Ladybird"_string,
-                .favicon_base64_png = {},
-            },
-        },
-        {
-            .id = generate_random_uuid(),
-            .data = BookmarkItem::Bookmark {
-                .url = URL::Parser::basic_parse("https://github.com/LadybirdBrowser/ladybird"sv).release_value(),
-                .title = "Ladybird GitHub"_string,
-                .favicon_base64_png = {},
-            },
-        },
-        {
-            .id = generate_random_uuid(),
-            .data = BookmarkItem::Bookmark {
-                .url = URL::Parser::basic_parse("https://discord.com/invite/nvfjVJ4Svh"sv).release_value(),
-                .title = "Ladybird Discord"_string,
+                .url = URL::Parser::basic_parse("https://cryfox.me"sv).release_value(),
+                .title = "CryFox"_string,
                 .favicon_base64_png = {},
             },
         },
@@ -148,7 +132,7 @@ static Vector<BookmarkItem> create_default_bookmarks()
 
 BookmarkStore BookmarkStore::create(Badge<Application>)
 {
-    auto bookmarks_directory = ByteString::formatted("{}/Ladybird", Core::StandardPaths::config_directory());
+    auto bookmarks_directory = ByteString::formatted("{}/CryFox", Core::StandardPaths::config_directory());
     auto bookmarks_path = ByteString::formatted("{}/Bookmarks.json", bookmarks_directory);
 
     BookmarkStore store { move(bookmarks_path) };
@@ -161,7 +145,7 @@ BookmarkStore BookmarkStore::create(Badge<Application>)
 
     auto bookmarks_json = read_json_file(store.m_bookmarks_path);
     if (bookmarks_json.is_error()) {
-        warnln("Unable to read Ladybird bookmarks: {}", bookmarks_json.error());
+        warnln("Unable to read CryFox bookmarks: {}", bookmarks_json.error());
         return store;
     }
 
@@ -440,7 +424,7 @@ void BookmarkStore::persist_bookmarks()
     root.set(ITEMS_KEY, serialize_items());
 
     if (auto result = write_json_file(m_bookmarks_path, root); result.is_error())
-        warnln("Unable to persist Ladybird bookmarks: {}", result.error());
+        warnln("Unable to persist CryFox bookmarks: {}", result.error());
 }
 
 void BookmarkStore::notify_observers()

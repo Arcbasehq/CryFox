@@ -164,3 +164,10 @@ document.addEventListener("WebUIMessage", event => {
         updateBrowsingDataSizes(event.detail.data);
     }
 });
+
+document.addEventListener("WebUILoaded", () => {
+    if (globalPrivacyControlToggle && !globalPrivacyControlToggle.checked) {
+        globalPrivacyControlToggle.checked = true;
+        ladybird.sendMessage("setGlobalPrivacyControl", true);
+    }
+});

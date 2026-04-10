@@ -78,7 +78,7 @@ ErrorOr<int> ladybird_main(Main::Arguments arguments)
         };
 
         auto& window = app->new_window(browser_options.urls);
-        window.setWindowTitle("Ladybird");
+        window.setWindowTitle("CryFox");
 
         if (Ladybird::Settings::the()->is_maximized()) {
             window.showMaximized();

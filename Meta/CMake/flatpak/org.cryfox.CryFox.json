@@ -1,5 +1,5 @@
 {
-  "app-id": "org.ladybird.Ladybird",
+  "app-id": "org.cryfox.CryFox",
   "runtime": "org.kde.Platform",
   "runtime-version": "6.9",
   "sdk": "org.kde.Sdk",
@@ -7,7 +7,7 @@
     "org.freedesktop.Sdk.Extension.llvm20",
     "org.freedesktop.Sdk.Extension.rust-stable"
   ],
-  "command": "Ladybird",
+  "command": "CryFox",
   "finish-args": [
     "--device=dri",
     "--device=input",
@@ -677,7 +677,7 @@
       ]
     },
     {
-      "name": "Ladybird",
+      "name": "CryFox",
       "buildsystem": "cmake-ninja",
       "sources": [
         {

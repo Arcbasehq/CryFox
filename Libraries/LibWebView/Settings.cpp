@@ -52,15 +52,15 @@ static constexpr auto dns_settings_key = "dnsSettings"sv;
 
 Settings Settings::create(Badge<Application>)
 {
-    // FIXME: Move this to a generic "Ladybird config directory" helper.
-    auto settings_directory = ByteString::formatted("{}/Ladybird", Core::StandardPaths::config_directory());
+    // FIXME: Move this to a generic "CryFox config directory" helper.
+    auto settings_directory = ByteString::formatted("{}/CryFox", Core::StandardPaths::config_directory());
     auto settings_path = ByteString::formatted("{}/Settings.json", settings_directory);
 
     Settings settings { move(settings_path) };
 
     auto settings_json = read_json_file(settings.m_settings_path);
     if (settings_json.is_error()) {
-        warnln("Unable to read Ladybird settings: {}", settings_json.error());
+        warnln("Unable to read CryFox settings: {}", settings_json.error());
         return settings;
     }
 
@@ -125,6 +125,8 @@ Settings Settings::create(Badge<Application>)
 
     if (auto global_privacy_control = settings_json.value().get_bool(global_privacy_control_key); global_privacy_control.has_value())
         settings.m_global_privacy_control = *global_privacy_control ? GlobalPrivacyControl::Yes : GlobalPrivacyControl::No;
+    else
+        settings.m_global_privacy_control = GlobalPrivacyControl::Yes;
 
     if (auto dns_settings = settings_json.value().get(dns_settings_key); dns_settings.has_value())
         settings.m_dns_settings = parse_dns_settings(*dns_settings);
@@ -492,7 +494,7 @@ void Settings::persist_settings()
     auto settings = serialize_json();
 
     if (auto result = write_json_file(m_settings_path, settings); result.is_error())
-        warnln("Unable to persist Ladybird settings: {}", result.error());
+        warnln("Unable to persist CryFox settings: {}", result.error());
 }
 
 void Settings::add_observer(Badge<SettingsObserver>, SettingsObserver& observer)

@@ -104,7 +104,7 @@ ErrorOr<void> Application::initialize(Main::Arguments const& arguments)
 #endif
 
 #if defined(AK_OS_MACOS)
-    m_mach_port_server = make<IPC::MachBootstrapListener>(mach_server_name_for_process("Ladybird"sv, Core::System::getpid()));
+    m_mach_port_server = make<IPC::MachBootstrapListener>(mach_server_name_for_process("CryFox"sv, Core::System::getpid()));
     set_mach_server_name(m_mach_port_server->server_port_name());
 
     m_mach_port_server->on_bootstrap_request = [this](IPC::MachBootstrapListener::BootstrapRequest request) {
@@ -166,12 +166,12 @@ ErrorOr<void> Application::initialize(Main::Arguments const& arguments)
     bool file_scheme_urls_have_tuple_origins = false;
 
     Core::ArgsParser args_parser;
-    args_parser.set_general_help("The Ladybird web browser :^)");
+    args_parser.set_general_help("The CryFox web browser :^)");
     args_parser.add_positional_argument(raw_urls, "URLs to open", "url", Core::ArgsParser::Required::No);
 
     args_parser.add_option(Core::ArgsParser::Option {
         .argument_mode = Core::ArgsParser::OptionArgumentMode::Optional,
-        .help_string = "Run Ladybird without a browser window. Mode may be 'screenshot' (default), 'layout-tree', 'text', or 'manual'.",
+        .help_string = "Run CryFox without a browser window. Mode may be 'screenshot' (default), 'layout-tree', 'text', or 'manual'.",
         .long_name = "headless",
         .value_name = "mode",
         .accept_value = [&](StringView value) {
@@ -321,7 +321,7 @@ ErrorOr<void> Application::initialize(Main::Arguments const& arguments)
     if (webdriver_endpoint.has_value())
         m_browser_options.webdriver_endpoint = *webdriver_endpoint;
 
-    auto http_disk_cache_mode = HTTPDiskCacheMode::Enabled;
+    auto http_disk_cache_mode = HTTPDiskCacheMode::Partitioned;
     if (disable_http_disk_cache)
         http_disk_cache_mode = HTTPDiskCacheMode::Disabled;
     else if (force_new_process)
@@ -459,10 +459,10 @@ ErrorOr<void> Application::launch_services()
     };
 
     if (m_browser_options.disable_sql_database == DisableSQLDatabase::No) {
-        // FIXME: Move this to a generic "Ladybird data directory" helper.
-        auto database_path = ByteString::formatted("{}/Ladybird", Core::StandardPaths::user_data_directory());
+        // FIXME: Move this to a generic "CryFox data directory" helper.
+        auto database_path = ByteString::formatted("{}/CryFox", Core::StandardPaths::user_data_directory());
 
-        m_database = TRY(Database::Database::create(database_path, "Ladybird"sv));
+        m_database = TRY(Database::Database::create(database_path, "CryFox"sv));
         m_cookie_jar = TRY(CookieJar::create(*m_database));
         m_storage_jar = TRY(StorageJar::create(*m_database));
     } else {
@@ -876,7 +876,7 @@ void Application::initialize_actions()
             view->select_all();
     });
 
-    m_open_about_page_action = Action::create("About Ladybird"sv, ActionID::OpenAboutPage, [this]() {
+    m_open_about_page_action = Action::create("About CryFox"sv, ActionID::OpenAboutPage, [this]() {
         open_url_in_new_tab(URL::about_version(), Web::HTML::ActivateTab::Yes);
     });
     m_open_settings_page_action = Action::create("Settings"sv, ActionID::OpenSettingsPage, [this]() {

@@ -1,12 +1,12 @@
 [Desktop Entry]
-Name=Ladybird
+Name=CryFox
 GenericName=Web Browser
 GenericName[eo]=Retumilo
 GenericName[fr]=Navigateur Web
 GenericName[ru]=Веб-браузер
 GenericName[sv]=Webbläsare
-Exec=Ladybird --force-new-process %U
-Icon=org.ladybird.Ladybird
+Exec=CryFox --force-new-process %U
+Icon=org.cryfox.CryFox
 DBusActivatable=false
 Type=Application
 Categories=Network;WebBrowser;
@@ -22,4 +22,4 @@ Name[eo]=Nova fenestro
 Name[fr]=Nouvelle Fenêtre
 Name[ru]=Новое окно
 Name[sv]=Nytt fönster
-Exec=Ladybird --new-window
+Exec=CryFox --new-window

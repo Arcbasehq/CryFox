@@ -40,7 +40,7 @@ qt_deploy_runtime_dependencies(
 ")
 
     add_custom_command(TARGET ladybird POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
+            COMMAND ${CMAKE_COMMAND}
             -P ${ladybird_deploy_script}
         COMMAND_EXPAND_LISTS
     )

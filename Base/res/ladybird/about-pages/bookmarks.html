@@ -7,19 +7,19 @@
         <style>
             @media (prefers-color-scheme: light) {
                 :root {
-                    --tree-hover-color: #e8e8e8;
-                    --tree-selected-color: #d8d8f8;
-                    --empty-text-color: #888;
-                    --url-text-color: #666;
+                    --tree-hover-color: var(--tree-hover-color, #e6edf1);
+                    --tree-selected-color: var(--tree-selected-color, #d7e7e1);
+                    --empty-text-color: var(--empty-text-color, #6b7682);
+                    --url-text-color: var(--url-text-color, #51606e);
                 }
             }
 
             @media (prefers-color-scheme: dark) {
                 :root {
-                    --tree-hover-color: #2e2e2e;
-                    --tree-selected-color: #35355a;
-                    --empty-text-color: #777;
-                    --url-text-color: #999;
+                    --tree-hover-color: var(--tree-hover-color, #2b3238);
+                    --tree-selected-color: var(--tree-selected-color, #2c3b36);
+                    --empty-text-color: var(--empty-text-color, #8a95a1);
+                    --url-text-color: var(--url-text-color, #a0abb6);
                 }
             }
 
@@ -66,7 +66,7 @@
             }
 
             .drop-indicator {
-                background-color: var(--violet-100) !important;
+                background-color: var(--accent-color) !important;
 
                 height: 2px;
                 margin: -1px 12px;
@@ -154,8 +154,7 @@
     <body>
         <header>
             <picture>
-                <source srcset="resource://icons/128x128/app-browser.png" media="(prefers-color-scheme: dark)" />
-                <img src="resource://icons/128x128/app-browser-dark.png" />
+                <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
             </picture>
             <h1>Bookmarks</h1>
         </header>

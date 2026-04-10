@@ -29,7 +29,7 @@ def main():
     platform = Platform()
     (default_cc, default_cxx) = platform.default_compiler()
 
-    parser = argparse.ArgumentParser(description="Ladybird")
+    parser = argparse.ArgumentParser(description="CryFox")
     subparsers = parser.add_subparsers(dest="command")
 
     preset_parser = argparse.ArgumentParser(add_help=False)
@@ -133,10 +133,14 @@ def main():
         sys.exit(1)
 
     if "target" in args:
-        if platform.host_system != HostSystem.Windows and args.target == "ladybird":
-            args.target = "Ladybird"
+        if platform.host_system == HostSystem.Windows:
+            if args.target == "CryFox":
+                args.target = "ladybird"
+        else:
+            if args.target == "ladybird":
+                args.target = "CryFox"
         if not args.target and args.command not in ("build", "rebuild"):
-            args.target = "ladybird" if platform.host_system == HostSystem.Windows else "Ladybird"
+            args.target = "ladybird" if platform.host_system == HostSystem.Windows else "CryFox"
 
     if args.command == "build":
         build_dir = configure_main(platform, args.preset, args.cc, args.cxx)
@@ -364,13 +368,13 @@ def run_main(host_system: HostSystem, build_dir: Path, target: str, args: list[s
 
     if host_system == HostSystem.macOS and target in (
         "ImageDecoder",
-        "Ladybird",
+        "CryFox",
         "RequestServer",
         "WebContent",
         "WebDriver",
         "WebWorker",
     ):
-        run_args.append(str(build_dir.joinpath("bin", "Ladybird.app", "Contents", "MacOS", target)))
+        run_args.append(str(build_dir.joinpath("bin", "CryFox.app", "Contents", "MacOS", target)))
     else:
         run_args.append(str(build_dir.joinpath("bin", target)))
 
@@ -389,8 +393,8 @@ def debug_main(host_system: HostSystem, build_dir: Path, target: str, debugger: 
     for cmd in debugger_commands:
         gdb_args.extend(["-ex" if debugger == "gdb" else "-o", cmd])
 
-    if target == "Ladybird" and host_system == HostSystem.macOS:
-        gdb_args.append(str(build_dir.joinpath("bin", "Ladybird.app")))
+    if target == "CryFox" and host_system == HostSystem.macOS:
+        gdb_args.append(str(build_dir.joinpath("bin", "CryFox.app")))
     elif host_system == HostSystem.Windows:
         gdb_args.append(str(build_dir.joinpath("bin", target + ".exe")))
     else:
@@ -406,8 +410,8 @@ def profile_main(host_system: HostSystem, build_dir: Path, target: str, args: li
 
     valgrind_args = ["valgrind", "--tool=callgrind", "--instr-atstart=yes"]
 
-    if target == "Ladybird" and host_system == HostSystem.macOS:
-        valgrind_args.append(str(build_dir.joinpath("bin", "Ladybird.app")))
+    if target == "CryFox" and host_system == HostSystem.macOS:
+        valgrind_args.append(str(build_dir.joinpath("bin", "CryFox.app")))
     else:
         valgrind_args.append(str(build_dir.joinpath("bin", target)))
 

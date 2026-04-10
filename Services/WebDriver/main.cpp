@@ -136,7 +136,7 @@ ErrorOr<int> ladybird_main(Main::Arguments arguments)
 
         auto launch_browser_callback = [&](ByteString const& webdriver_endpoint, bool headless) {
             auto arguments = create_arguments(webdriver_endpoint, headless, expose_experimental_interfaces, force_cpu_painting, debug_process, default_time_zone);
-            return launch_process("Ladybird"sv, arguments.span());
+            return launch_process("CryFox"sv, arguments.span());
         };
 
         auto maybe_client = WebDriver::Client::try_create(maybe_buffered_socket.release_value(), move(launch_browser_callback));

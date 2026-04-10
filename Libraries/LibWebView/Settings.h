@@ -119,7 +119,7 @@ private:
     Optional<AutocompleteEngine> m_autocomplete_engine;
     SiteSetting m_autoplay;
     BrowsingDataSettings m_browsing_data_settings;
-    GlobalPrivacyControl m_global_privacy_control { GlobalPrivacyControl::No };
+    GlobalPrivacyControl m_global_privacy_control { GlobalPrivacyControl::Yes };
     DNSSettings m_dns_settings { SystemDNS() };
     bool m_dns_override_by_command_line { false };
 

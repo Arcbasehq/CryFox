@@ -37,7 +37,7 @@ static constexpr StringView cache_directory_for_mode(DiskCache::Mode mode)
 
 ErrorOr<DiskCache> DiskCache::create(Mode mode)
 {
-    auto cache_directory = LexicalPath::join(Core::StandardPaths::cache_directory(), "Ladybird"sv, cache_directory_for_mode(mode));
+    auto cache_directory = LexicalPath::join(Core::StandardPaths::cache_directory(), "CryFox"sv, cache_directory_for_mode(mode));
     TRY(Core::Directory::create(cache_directory, Core::Directory::CreateDirectories::Yes));
 
     auto database = mode == DiskCache::Mode::Normal

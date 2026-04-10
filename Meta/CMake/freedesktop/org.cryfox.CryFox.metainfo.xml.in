@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2025, the Ladybird developers. -->
+<component type="desktop-application">
+  <id>org.cryfox.CryFox</id>
+
+  <name>CryFox</name>
+  <summary>Private, fast, and secure web browser</summary>
+
+  <developer id="org.cryfox">
+    <name>CryFox Browser</name>
+  </developer>
+
+  <url type="homepage">https://cryfox.me</url>
+  <url type="bugtracker">https://cryfox.me/support</url>
+  <url type="faq">https://cryfox.me/faq</url>
+  <url type="contact">https://cryfox.me/contact</url>
+
+  <metadata_license>0BSD</metadata_license>
+  <project_license>BSD-2-Clause</project_license>
+  <content_rating type="oars-1.1" />
+
+  <description>
+    <p>
+      CryFox is a privacy-first browser focused on speed and security.
+      It keeps tracking to a minimum while delivering fast, standards-based browsing.
+    </p>
+  </description>
+
+  <provides>
+    <mediatype>text/html</mediatype>
+    <mediatype>text/xml</mediatype>
+    <mediatype>application/xhtml+xml</mediatype>
+    <mediatype>x-scheme-handler/http</mediatype>
+    <mediatype>x-scheme-handler/https</mediatype>
+  </provides>
+
+  <launchable type="desktop-id">org.cryfox.CryFox.desktop</launchable>
+  <releases>
+    <release version="@CMAKE_PROJECT_VERSION@-snapshot-@GIT_HASH@" type="snapshot" date="@DATE@">
+      <description>
+        <p>
+          Pre-Alpha.
+        </p>
+      </description>
+    </release>
+  </releases>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#166b5a</color>
+    <color type="primary" scheme_preference="dark">#1f8572</color>
+  </branding>
+
+</component>

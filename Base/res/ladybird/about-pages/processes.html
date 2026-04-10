@@ -2,27 +2,26 @@
 <html>
     <head>
         <title>Task Manager</title>
+        <link rel="stylesheet" type="text/css" href="resource://ladybird/ladybird.css" />
         <style>
             @media (prefers-color-scheme: dark) {
                 :root {
-                    --table-border: gray;
-                    --table-row-odd: rgb(57, 57, 57);
-                    --table-row-hover: rgb(80, 79, 79);
+                    --table-border: var(--table-border, #3b454f);
+                    --table-row-odd: var(--table-row-odd, #2a3137);
+                    --table-row-hover: var(--table-row-hover, #353d44);
                 }
             }
 
             @media (prefers-color-scheme: light) {
                 :root {
-                    --table-border: gray;
-                    --table-row-odd: rgb(229, 229, 229);
-                    --table-row-hover: rgb(199, 198, 198);
+                    --table-border: var(--table-border, #cfd9e1);
+                    --table-row-odd: var(--table-row-odd, #eef3f6);
+                    --table-row-hover: var(--table-row-hover, #e3eaee);
                 }
             }
 
             html {
                 color-scheme: light dark;
-
-                font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
                 font-size: 10pt;
             }
 
@@ -77,7 +76,7 @@
             <tbody id="process-table"></tbody>
         </table>
         <script type="module">
-            import { getByteFormatter }  from "resource://ladybird/utils.js";
+            import { getByteFormatter } from "resource://ladybird/utils.js";
             const memoryFormatter = getByteFormatter(() => {
                 return {
                     unitDisplay: "narrow",

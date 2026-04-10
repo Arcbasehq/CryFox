@@ -155,7 +155,7 @@ static QIcon const& app_icon()
     static QIcon icon;
     if (icon.isNull()) {
         QPixmap pixmap;
-        pixmap.load(":/Icons/ladybird.png");
+        pixmap.load(":/Icons/cryfox.png");
         icon = QIcon(pixmap);
     }
     return icon;
@@ -215,6 +215,10 @@ BrowserWindow::BrowserWindow(Vector<URL::URL> const& initial_urls, IsPopupWindow
     m_new_window_action->setShortcuts(QKeySequence::keyBindings(QKeySequence::StandardKey::New));
     m_hamburger_menu->addAction(m_new_window_action);
     file_menu->addAction(m_new_window_action);
+
+    auto* settings_action = create_application_action(*m_hamburger_menu, Application::the().open_settings_page_action());
+    m_hamburger_menu->addAction(settings_action);
+    file_menu->addAction(settings_action);
 
     auto* close_current_tab_action = new QAction("&Close Current Tab", this);
     close_current_tab_action->setIcon(load_icon_from_uri("resource://icons/16x16/close-tab.png"sv));
@@ -322,7 +326,6 @@ BrowserWindow::BrowserWindow(Vector<URL::URL> const& initial_urls, IsPopupWindow
     QObject::connect(m_new_tab_action, &QAction::triggered, this, [this] {
         auto& tab = new_tab_from_url(WebView::Application::settings().new_tab_page_url(), Web::HTML::ActivateTab::Yes);
         tab.set_url_is_hidden(true);
-        tab.focus_location_editor();
     });
     QObject::connect(m_new_window_action, &QAction::triggered, this, [] {
         (void)Application::the().new_window({});
@@ -337,7 +340,7 @@ BrowserWindow::BrowserWindow(Vector<URL::URL> const& initial_urls, IsPopupWindow
     QObject::connect(m_tabs_container, &TabWidget::current_tab_changed, this, [this](int index) {
         auto* tab = m_tabs_container->tab(index);
         if (tab)
-            setWindowTitle(QString("%1 - Ladybird").arg(tab->title()));
+            setWindowTitle(QString("%1 - CryFox").arg(tab->title()));
 
         set_current_tab(tab);
         fullscreen_mode().exit(FullscreenMode::ExitInitiatedBy::UI);
@@ -572,7 +575,7 @@ void BrowserWindow::tab_title_changed(int index, QString const& title)
     m_tabs_container->set_tab_tooltip(index, title);
 
     if (m_tabs_container->current_index() == index)
-        setWindowTitle(QString("%1 - Ladybird").arg(title));
+        setWindowTitle(QString("%1 - CryFox").arg(title));
 }
 
 void BrowserWindow::tab_favicon_changed(int index, QIcon const& icon)
@@ -610,7 +613,7 @@ void BrowserWindow::tab_audio_play_state_changed(int index, Web::HTML::AudioPlay
     case Web::HTML::AudioPlayState::Playing:
         auto* button = new TabBarButton(icon_for_page_mute_state(*tab));
         button->setToolTip(tool_tip_for_page_mute_state(*tab));
-        button->setObjectName("LadybirdAudioState");
+        button->setObjectName("CryFoxAudioState");
 
         connect(button, &QPushButton::clicked, this, [this, tab, position]() {
             tab->view().toggle_page_mute_state();
@@ -660,7 +663,7 @@ QString BrowserWindow::tool_tip_for_page_mute_state(Tab& tab) const
 QTabBar::ButtonPosition BrowserWindow::audio_button_position_for_tab(int tab_index) const
 {
     if (auto* button = m_tabs_container->tab_bar()->tabButton(tab_index, QTabBar::LeftSide)) {
-        if (button->objectName() != "LadybirdAudioState")
+        if (button->objectName() != "CryFoxAudioState")
             return QTabBar::RightSide;
     }
 

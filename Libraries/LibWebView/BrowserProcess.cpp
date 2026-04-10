@@ -32,7 +32,7 @@ private:
 
 ErrorOr<BrowserProcess::ProcessDisposition> BrowserProcess::connect(Vector<ByteString> const& raw_urls, NewWindow new_window)
 {
-    static constexpr auto process_name = "Ladybird"sv;
+    static constexpr auto process_name = "CryFox"sv;
 
     auto [socket_path, pid_path] = TRY(Process::paths_for_process(process_name));
 
@@ -61,7 +61,7 @@ ErrorOr<BrowserProcess::ProcessDisposition> BrowserProcess::connect(Vector<ByteS
 #if defined(AK_OS_MACOS)
 ErrorOr<void> BrowserProcess::connect_as_client(pid_t pid, Vector<ByteString> const& raw_urls, NewWindow new_window)
 {
-    auto transport_ports = TRY(IPC::bootstrap_transport_from_mach_server(mach_server_name_for_process("Ladybird"sv, pid)));
+    auto transport_ports = TRY(IPC::bootstrap_transport_from_mach_server(mach_server_name_for_process("CryFox"sv, pid)));
     auto client = UIProcessClient::construct(make<IPC::Transport>(move(transport_ports.receive_right), move(transport_ports.send_right)));
 
     switch (new_window) {
