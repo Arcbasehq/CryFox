@@ -4,10 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>New Tab</title>
-
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
         <link rel="stylesheet" type="text/css" href="resource://ladybird/ladybird.css" />
-
         <style>
             body {
                 margin: 0;
@@ -15,7 +13,6 @@
                 display: grid;
                 place-items: center;
                 color: var(--text-color);
-                font-family: "SerenitySans", sans-serif;
             }
 
             .panel {
@@ -80,11 +77,6 @@
                 outline: none;
             }
 
-            .search input:focus {
-                border-color: var(--accent-color);
-                box-shadow: 0 0 0 3px rgba(208, 106, 61, 0.18);
-            }
-
             .primary-button {
                 justify-self: center;
                 padding: 10px 20px;
@@ -95,14 +87,8 @@
                 font-size: 14px;
                 cursor: pointer;
             }
-
-            .primary-button:focus-visible {
-                outline: 2px solid rgba(208, 106, 61, 0.5);
-                outline-offset: 2px;
-            }
         </style>
     </head>
-
     <body>
         <main class="panel">
             <div>
@@ -112,35 +98,7 @@
                 <h1>CryFox</h1>
             </div>
 
-            <!-- FORM ADDED -->
-            <form class="search" id="searchForm">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input id="searchInput" type="search" placeholder="Search or enter address" />
-                <button class="primary-button" type="submit">Search</button>
-            </form>
-
-            <p class="tagline">Privacy. Performance. Security.</p>
+            <p class="tagline">Privacy. Security. Speed.</p>
         </main>
-
-        <script>
-            const form = document.getElementById("searchForm");
-            const input = document.getElementById("searchInput");
-
-            form.addEventListener("submit", e => {
-                e.preventDefault();
-
-                const query = input.value.trim();
-                if (!query) return;
-
-                // Simple logic: URL vs search
-                const isURL = query.includes(".") && !query.includes(" ");
-
-                if (isURL) {
-                    window.location.href = "https://" + query;
-                } else {
-                    window.location.href = "https://duckduckgo.com/?q=" + encodeURIComponent(query);
-                }
-            });
-        </script>
     </body>
 </html>

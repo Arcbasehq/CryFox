@@ -2,29 +2,161 @@
 <html>
     <head>
         <title>Settings</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
         <link rel="stylesheet" type="text/css" href="resource://ladybird/ladybird.css" />
         <link rel="stylesheet" type="text/css" href="resource://ladybird/about-pages/webui.css" />
         <style>
-            body {
-                font-family: "SerenitySans", sans-serif;
+            :root {
+                --page-max-width: 1200px;
+                --sidebar-width: 240px;
             }
+
             @media (prefers-color-scheme: light) {
                 :root {
-                    --input-background-color: var(--input-background-color, #f9fbfc);
-                    --border-color: var(--border-color, #d7e0e7);
+                    --page-background: #f7f8fb;
+                    --page-background-alt: #edf1f7;
+                    --sidebar-background: #f1f3f8;
+                    --sidebar-border: #d8dde7;
+                    --panel-background: #ffffff;
+                    --panel-border: #d7dde8;
+                    --header-surface: rgba(255, 255, 255, 0.9);
+                    --tab-hover-background: #e9effa;
+                    --tab-active-background: #e1ebff;
+                    --tab-icon-background: #c9d9ff;
+                    --section-title-color: #2b2f3a;
+                    --input-background-color: #ffffff;
+                    --border-color: #cfd6e4;
+                    --accent-color: #0060df;
+                    --accent-strong: #004fc2;
+                    --accent-soft: #d9e7ff;
                 }
             }
 
             @media (prefers-color-scheme: dark) {
                 :root {
-                    --input-background-color: var(--input-background-color, #1f252a);
-                    --border-color: var(--border-color, #3b454f);
+                    --page-background: #1a1c23;
+                    --page-background-alt: #202431;
+                    --sidebar-background: #20242e;
+                    --sidebar-border: #2e3442;
+                    --panel-background: #2a2f3b;
+                    --panel-border: #353b4b;
+                    --header-surface: rgba(26, 29, 36, 0.9);
+                    --tab-hover-background: #262f44;
+                    --tab-active-background: #2a3856;
+                    --tab-icon-background: #3a4d78;
+                    --section-title-color: #f1f3f8;
+                    --input-background-color: #222733;
+                    --border-color: #343b48;
+                    --accent-color: #4c9aff;
+                    --accent-strong: #3d8bfd;
+                    --accent-soft: rgba(76, 154, 255, 0.18);
                 }
+            }
+
+            body {
+                font-family: "SerenitySans", sans-serif;
+                background: linear-gradient(180deg, var(--page-background), var(--page-background-alt));
+                min-height: 100vh;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            header.settings-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 24px;
+                padding: 24px 32px;
+                margin: 0 auto 8px auto;
+                max-width: var(--page-max-width);
+                background-color: var(--header-surface);
+                border-bottom: 1px solid var(--sidebar-border);
+                border-radius: 0 0 16px 16px;
+                backdrop-filter: blur(6px);
+            }
+
+            .header-brand {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
+
+            header.settings-header h1 {
+                font-size: 22px;
+                font-weight: 600;
+            }
+
+            header.settings-header img {
+                height: 44px;
+                width: 44px;
+                margin: 0;
+            }
+
+            .header-search {
+                flex: 1;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .header-search input[type="search"] {
+                width: min(360px, 100%);
+                border-radius: 999px;
+                padding: 10px 16px;
+            }
+
+            .settings-shell {
+                display: grid;
+                grid-template-columns: var(--sidebar-width) 1fr;
+                gap: 24px;
+                max-width: var(--page-max-width);
+                margin: 0 auto;
+                padding: 12px 32px 48px 32px;
+            }
+
+            .settings-content {
+                min-width: 0;
+            }
+
+            .search-hidden {
+                display: none !important;
+            }
+
+            .search-empty {
+                background-color: var(--panel-background);
+                border: 1px solid var(--panel-border);
+                border-radius: 12px;
+                padding: 32px 24px;
+                text-align: center;
+                color: var(--empty-text-color, inherit);
+            }
+
+            .search-empty strong {
+                display: block;
+                font-size: 16px;
+                margin-bottom: 6px;
+                color: var(--section-title-color);
+            }
+
+            .settings-sidebar {
+                background-color: var(--sidebar-background);
+                border: 1px solid var(--sidebar-border);
+                border-radius: 14px;
+                padding: 16px;
+                height: fit-content;
+            }
+
+            .sidebar-title {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                opacity: 0.6;
+                margin-bottom: 10px;
             }
 
             hr {
                 height: 1px;
-                background-color: var(--border-color);
+                background-color: var(--panel-border);
                 border: none;
             }
 
@@ -32,13 +164,14 @@
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 10px;
+                gap: 16px;
             }
 
             .input-with-reset {
                 position: relative;
                 display: flex;
-                width: 50%;
+                width: 60%;
+                min-width: 220px;
             }
 
             .input-with-reset input {
@@ -50,16 +183,12 @@
                 position: absolute;
                 right: 12px;
                 top: 50%;
-
                 transform: translateY(-50%);
-
                 background: none;
                 border: none;
                 padding: 0 4px;
-
                 font-size: 18px;
                 opacity: 0.4;
-
                 cursor: pointer;
             }
 
@@ -71,14 +200,14 @@
             .inline-container input[type="text"],
             .inline-container input[type="url"],
             .inline-container select {
-                width: 50%;
+                width: 60%;
+                min-width: 220px;
             }
 
             .button-container {
                 display: flex;
                 justify-content: flex-end;
                 gap: 10px;
-
                 margin-top: 20px;
             }
 
@@ -99,32 +228,47 @@
             }
 
             .forcibly-enabled {
-                font-size: 14px;
-                opacity: 0.6;
+                font-size: 13px;
+                opacity: 0.7;
             }
 
             .description {
                 margin-bottom: 10px;
-
-                font-size: 14px;
+                font-size: 13px;
                 opacity: 0.7;
             }
 
             label {
                 display: block;
                 margin-bottom: 8px;
-
                 font-size: 14px;
             }
 
             input[type="number"],
             input[type="text"],
             input[type="url"],
+            input[type="search"],
             select {
                 background-color: var(--input-background-color);
-
                 width: 100%;
                 border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 10px 12px;
+            }
+
+            button.primary-button,
+            button.secondary-button {
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-weight: 500;
+            }
+
+            button.primary-button:focus-visible,
+            button.secondary-button:focus-visible,
+            input:focus-visible,
+            select:focus-visible {
+                outline: 2px solid rgba(0, 96, 223, 0.45);
+                outline-offset: 2px;
             }
 
             input[type="number"].success,
@@ -139,43 +283,57 @@
                 border: 1px solid red;
             }
 
+            .card-title {
+                color: var(--section-title-color);
+                font-size: 15px;
+                font-weight: 600;
+                margin: 18px 0 8px 4px;
+            }
+
+            .card {
+                background-color: var(--panel-background);
+                border: 1px solid var(--panel-border);
+                border-radius: 12px;
+                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+            }
+
+            .card-body {
+                padding: 18px 20px;
+            }
+
+            .card-group {
+                margin-bottom: 16px;
+            }
+
             dialog {
-                background-color: var(--card-background-color);
-                box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-
+                background-color: var(--panel-background);
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
                 width: 90%;
-                max-width: 500px;
-
+                max-width: 520px;
                 margin: auto;
                 padding: 0;
-
-                border: none;
-                border-radius: 8px;
+                border: 1px solid var(--panel-border);
+                border-radius: 12px;
                 outline: none;
             }
 
             dialog::backdrop {
-                background-color: rgba(0, 0, 0, 0.5);
+                background-color: rgba(0, 0, 0, 0.45);
             }
 
             dialog .dialog-header {
-                background-color: var(--card-header-background-color);
-
+                background-color: var(--sidebar-background);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-
                 padding: 15px 20px;
             }
 
             dialog .dialog-body {
                 height: 450px;
-
-                border-top: 1px solid var(--border-color);
-
+                border-top: 1px solid var(--panel-border);
                 display: flex;
                 flex-direction: column;
-
                 padding: 15px 20px;
             }
 
@@ -188,11 +346,9 @@
             }
 
             dialog .dialog-form {
-                border-top: 1px solid var(--border-color);
-
+                border-top: 1px solid var(--panel-border);
                 display: flex;
                 flex-direction: column;
-
                 padding: 15px 20px;
             }
 
@@ -203,28 +359,23 @@
             dialog .dialog-footer {
                 display: flex;
                 justify-content: flex-end;
-
-                border-top: 1px solid var(--border-color);
-
+                border-top: 1px solid var(--panel-border);
                 padding: 15px 20px;
                 gap: 10px;
             }
 
             dialog .dialog-title {
                 font-size: 18px;
-                font-weight: 500;
+                font-weight: 600;
             }
 
             dialog .dialog-button {
                 background: none;
                 border: none;
                 outline: none;
-
                 padding: 0;
-
                 font-size: 22px;
                 opacity: 0.8;
-
                 cursor: pointer;
             }
 
@@ -237,27 +388,23 @@
             }
 
             dialog .dialog-list {
-                outline: 1px solid var(--border-color);
-                border-radius: 4px;
-
+                outline: 1px solid var(--panel-border);
+                border-radius: 8px;
                 margin: 10px 0;
-
                 font-size: 14px;
-
                 overflow-y: auto;
                 flex-grow: 1;
             }
 
             dialog .dialog-list-item {
                 padding: 10px;
-
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
             }
 
             dialog .dialog-list-item:hover {
-                background-color: var(--card-header-background-color);
+                background-color: var(--tab-hover-background);
             }
 
             dialog .dialog-list-item-placeholder {
@@ -272,7 +419,6 @@
             dialog .dialog-controls {
                 display: flex;
                 justify-content: flex-end;
-
                 margin-top: auto;
                 gap: 10px;
             }
@@ -289,34 +435,43 @@
 
             .tab-bar {
                 display: flex;
-                gap: 4px;
-
-                margin-bottom: 20px;
-                border-bottom: 1px solid var(--border-color);
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 0;
+                border-bottom: none;
             }
 
             .tab-button {
                 background: none;
-                border: none;
-                border-bottom: 3px solid transparent;
-
-                padding: 10px 16px;
-
+                border: 1px solid transparent;
+                border-left: 3px solid transparent;
+                padding: 10px 12px;
+                border-radius: 10px;
                 font-size: 14px;
                 font-weight: 500;
                 color: inherit;
-                opacity: 0.6;
-
+                opacity: 0.8;
                 cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                text-align: left;
             }
 
             .tab-button:hover {
-                opacity: 0.8;
+                opacity: 1;
+                background-color: var(--tab-hover-background);
             }
 
             .tab-button.active {
-                border-bottom-color: var(--accent-color);
+                border-left-color: var(--accent-color);
+                background-color: var(--tab-active-background);
                 opacity: 1;
+            }
+
+            .tab-button.active::before {
+                background: var(--accent-color);
+                box-shadow: none;
             }
 
             .tab-panel {
@@ -326,188 +481,256 @@
             .tab-panel.active {
                 display: block;
             }
+
+            @media (max-width: 900px) {
+                header.settings-header {
+                    flex-direction: column;
+                    align-items: stretch;
+                    border-radius: 0 0 12px 12px;
+                }
+
+                .settings-shell {
+                    grid-template-columns: 1fr;
+                    padding: 12px 20px 40px 20px;
+                }
+
+                .settings-sidebar {
+                    padding: 12px;
+                }
+
+                .tab-bar {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                }
+
+                .tab-button {
+                    flex: 1 1 140px;
+                }
+
+                .inline-container {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .inline-container input[type="number"],
+                .inline-container input[type="text"],
+                .inline-container input[type="url"],
+                .inline-container select,
+                .input-with-reset {
+                    width: 100%;
+                    min-width: unset;
+                }
+            }
         </style>
     </head>
     <body>
-        <header>
-            <picture>
-                <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
-            </picture>
-            <h1>CryFox Settings</h1>
+        <header class="settings-header">
+            <div class="header-brand">
+                <picture>
+                    <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
+                </picture>
+                <h1>CryFox Settings</h1>
+            </div>
+            <div class="header-search">
+                <input id="settings-search" type="search" placeholder="Search settings" aria-label="Search settings" />
+            </div>
         </header>
 
-        <div class="tab-bar">
-            <button class="tab-button active" data-tab="general">General</button>
-            <button class="tab-button" data-tab="search">Search</button>
-            <button class="tab-button" data-tab="permissions">Permissions</button>
-            <button class="tab-button" data-tab="privacy">Privacy</button>
-            <button class="tab-button" data-tab="network">Network</button>
-        </div>
-
-        <div class="tab-panel active" id="tab-general">
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-group inline-container">
-                        <label for="new-tab-page-url">New Tab Page URL</label>
-                        <div class="input-with-reset">
-                            <input id="new-tab-page-url" type="url" placeholder="about:newtab" />
-                            <button id="new-tab-page-url-reset" class="input-reset-button" title="Restore default">
-                                &times;
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="card-group inline-container">
-                        <label for="default-zoom-level">Default Zoom Level</label>
-                        <select id="default-zoom-level"></select>
-                    </div>
-
-                    <div class="card-group inline-container">
-                        <label for="languages-settings">Languages</label>
-                        <button id="languages-settings" class="secondary-button">Settings...</button>
-                    </div>
+        <div class="settings-shell">
+            <nav class="settings-sidebar">
+                <p class="sidebar-title">Categories</p>
+                <div class="tab-bar">
+                    <button class="tab-button active" data-tab="general">
+                        <i class="fa-solid fa-house"></i> General
+                    </button>
+                    <button class="tab-button" data-tab="search">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                    </button>
+                    <button class="tab-button" data-tab="permissions">
+                        <i class="fa-solid fa-shield-alt"></i> Permissions
+                    </button>
+                    <button class="tab-button" data-tab="privacy"><i class="fa-solid fa-lock"></i> Privacy</button>
+                    <button class="tab-button" data-tab="network">
+                        <i class="fa-solid fa-network-wired"></i> Network
+                    </button>
                 </div>
-            </div>
-        </div>
+            </nav>
 
-        <div class="tab-panel" id="tab-search">
-            <div class="card">
-                <div class="card-body">
-                    <p class="card-group">Default Search Engine</p>
-                    <div class="card-group">
-                        <p class="description">Select the search engine to use in the address bar.</p>
-
-                        <div class="inline-container">
-                            <select id="search-engine" style="width: 100%">
-                                <option value="">Disable search</option>
-                                <hr />
-                            </select>
-                            <button id="search-settings" class="secondary-button">Settings...</button>
-                        </div>
-                    </div>
+            <main class="settings-content">
+                <div id="settings-search-empty" class="search-empty search-hidden" role="status" aria-live="polite">
+                    <strong>No settings found</strong>
+                    Try a different search term.
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="card-body">
-                    <p class="card-group">Search Suggestions</p>
-                    <div class="card-group">
-                        <p class="description">Select the engine that will provide search suggestions.</p>
-                        <select id="autocomplete-engine">
-                            <option value="">Disable search suggestions</option>
-                            <hr />
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-panel" id="tab-permissions">
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-group inline-container">
-                        <span>Autoplay</span>
-                        <span id="autoplay-forcibly-enabled" class="forcibly-enabled hidden">
-                            This setting is controlled via the command line
-                        </span>
-                        <button id="autoplay-settings" class="secondary-button">Settings...</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-panel" id="tab-privacy">
-            <h3 class="card-title">Browsing Data</h3>
-            <div class="card">
-                <div class="card-body">
-                    <p id="browsing-data-total-size" class="card-group"></p>
-
-                    <div class="card-group">
-                        <div class="inline-container">
-                            <div>
-                                <label for="browsing-data-settings-max-disk-cache-size">
-                                    Maximum disk cache size
-                                </label>
-                                <p class="description">Limit the space used for the HTTP disk cache.</p>
+                <div class="tab-panel active" id="tab-general">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-group inline-container">
+                                <label for="new-tab-page-url">New Tab Page URL</label>
+                                <div class="input-with-reset">
+                                    <input id="new-tab-page-url" type="url" placeholder="about:newtab" />
+                                    <button
+                                        id="new-tab-page-url-reset"
+                                        class="input-reset-button"
+                                        title="Restore default"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
                             </div>
-                            <div class="input-field-container">
-                                <input
-                                    id="browsing-data-settings-max-disk-cache-size"
-                                    type="number"
-                                    min="1"
-                                    style="width: 150px"
-                                />
-                                <select id="browsing-data-settings-max-disk-cache-unit" style="width: 80px">
-                                    <option value="MiB">MiB</option>
-                                    <option value="GiB">GiB</option>
+
+                            <div class="card-group inline-container">
+                                <label for="default-zoom-level">Default Zoom Level</label>
+                                <select id="default-zoom-level"></select>
+                            </div>
+
+                            <div class="card-group inline-container">
+                                <label for="languages-settings">Languages</label>
+                                <button id="languages-settings" class="secondary-button">Settings...</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" id="tab-search">
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-group">Default Search Engine</p>
+                            <div class="card-group">
+                                <p class="description">Select the search engine to use in the address bar.</p>
+
+                                <div class="inline-container">
+                                    <select id="search-engine" style="width: 100%">
+                                        <option value="">Disable search</option>
+                                        <hr />
+                                    </select>
+                                    <button id="search-settings" class="secondary-button">Settings...</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="card-group">Search Suggestions</p>
+                            <div class="card-group">
+                                <p class="description">Select the engine that will provide search suggestions.</p>
+                                <select id="autocomplete-engine">
+                                    <option value="">Disable search suggestions</option>
+                                    <hr />
                                 </select>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-group inline-container">
-                        <span>Clear Browsing Data</span>
-                        <button id="browsing-data-settings" class="secondary-button">Clear...</button>
-                    </div>
-                </div>
-            </div>
-
-            <h3 class="card-title">Privacy</h3>
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-group">
-                        <div class="inline-container">
-                            <label for="global-privacy-control-toggle">Global Privacy Control</label>
-                            <input id="global-privacy-control-toggle" type="checkbox" switch />
-                        </div>
-                        <p class="description">Tell websites not to sell or share your data.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-panel" id="tab-network">
-            <h3 class="card-title">DNS Settings</h3>
-            <div class="card">
-                <div class="card-body">
-                    <span id="dns-forcibly-enabled" class="forcibly-enabled hidden">
-                        This setting is controlled via the command line
-                    </span>
-
-                    <div class="card-group inline-container" id="dns-settings-container">
-                        <label for="dns-upstream">DNS Upstream</label>
-                        <select id="dns-upstream">
-                            <option value="system">System DNS</option>
-                            <option value="custom">Custom DNS Server</option>
-                        </select>
-                    </div>
-                    <div id="custom-dns-settings" class="hidden">
-                        <div class="card-group inline-container">
-                            <label for="dns-type">Type</label>
-                            <select id="dns-type">
-                                <option value="udp">UDP</option>
-                                <option value="tls">TLS</option>
-                            </select>
-                        </div>
-                        <div class="card-group inline-container">
-                            <label for="dnssec-toggle">Validate DNSSEC Locally</label>
-                            <input id="dnssec-toggle" type="checkbox" switch />
-                        </div>
-                        <div class="card-group inline-container">
-                            <label for="dns-server">DNS Server (IP or hostname)</label>
-                            <input id="dns-server" type="text" />
-                        </div>
-                        <div class="card-group inline-container">
-                            <label for="dns-port">Port</label>
-                            <input id="dns-port" type="text" placeholder="53" />
+                <div class="tab-panel" id="tab-permissions">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-group inline-container">
+                                <span>Autoplay</span>
+                                <span id="autoplay-forcibly-enabled" class="forcibly-enabled hidden">
+                                    This setting is controlled via the command line
+                                </span>
+                                <button id="autoplay-settings" class="secondary-button">Settings...</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="tab-panel" id="tab-privacy">
+                    <h3 class="card-title">Browsing Data</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <p id="browsing-data-total-size" class="card-group"></p>
+
+                            <div class="card-group">
+                                <div class="inline-container">
+                                    <div>
+                                        <label for="browsing-data-settings-max-disk-cache-size">
+                                            Maximum disk cache size
+                                        </label>
+                                        <p class="description">Limit the space used for the HTTP disk cache.</p>
+                                    </div>
+                                    <div class="input-field-container">
+                                        <input
+                                            id="browsing-data-settings-max-disk-cache-size"
+                                            type="number"
+                                            min="1"
+                                            style="width: 150px"
+                                        />
+                                        <select id="browsing-data-settings-max-disk-cache-unit" style="width: 80px">
+                                            <option value="MiB">MiB</option>
+                                            <option value="GiB">GiB</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-group inline-container">
+                                <span>Clear Browsing Data</span>
+                                <button id="browsing-data-settings" class="secondary-button">Clear...</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="card-title">Privacy</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-group">
+                                <div class="inline-container">
+                                    <label for="global-privacy-control-toggle">Global Privacy Control</label>
+                                    <input id="global-privacy-control-toggle" type="checkbox" switch />
+                                </div>
+                                <p class="description">Tell websites not to sell or share your data.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" id="tab-network">
+                    <h3 class="card-title">DNS Settings</h3>
+                    <div class="card">
+                        <div class="card-body">
+                            <span id="dns-forcibly-enabled" class="forcibly-enabled hidden">
+                                This setting is controlled via the command line
+                            </span>
+
+                            <div class="card-group inline-container" id="dns-settings-container">
+                                <label for="dns-upstream">DNS Upstream</label>
+                                <select id="dns-upstream">
+                                    <option value="system">System DNS</option>
+                                    <option value="custom">Custom DNS Server</option>
+                                </select>
+                            </div>
+                            <div id="custom-dns-settings" class="hidden">
+                                <div class="card-group inline-container">
+                                    <label for="dns-type">Type</label>
+                                    <select id="dns-type">
+                                        <option value="udp">UDP</option>
+                                        <option value="tls">TLS</option>
+                                    </select>
+                                </div>
+                                <div class="card-group inline-container">
+                                    <label for="dnssec-toggle">Validate DNSSEC Locally</label>
+                                    <input id="dnssec-toggle" type="checkbox" switch />
+                                </div>
+                                <div class="card-group inline-container">
+                                    <label for="dns-server">DNS Server (IP or hostname)</label>
+                                    <input id="dns-server" type="text" />
+                                </div>
+                                <div class="card-group inline-container">
+                                    <label for="dns-port">Port</label>
+                                    <input id="dns-port" type="text" placeholder="53" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
 
         <dialog id="languages-dialog" closedby="any">
@@ -651,6 +874,86 @@
                     history.replaceState(null, "", `#${button.dataset.tab}`);
                 });
             });
+
+            const settingsSearchInput = document.getElementById("settings-search");
+
+            const applySettingsSearch = () => {
+                if (!settingsSearchInput) {
+                    return;
+                }
+
+                const query = settingsSearchInput.value.trim().toLowerCase();
+                const panels = Array.from(document.querySelectorAll(".tab-panel"));
+                const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+                const emptyState = document.getElementById("settings-search-empty");
+
+                if (!query) {
+                    panels.forEach(panel => {
+                        panel.classList.remove("search-hidden");
+                        panel.querySelectorAll(".card, .card-title").forEach(el => {
+                            el.classList.remove("search-hidden");
+                        });
+                    });
+                    tabButtons.forEach(button => button.classList.remove("search-hidden"));
+                    if (emptyState) {
+                        emptyState.classList.add("search-hidden");
+                    }
+                    const hash = location.hash.slice(1);
+                    if (hash) {
+                        switchTab(hash);
+                    }
+                    return;
+                }
+
+                panels.forEach(panel => {
+                    let panelHasMatch = false;
+
+                    const cards = Array.from(panel.querySelectorAll(".card"));
+                    cards.forEach(card => {
+                        const match = card.textContent.toLowerCase().includes(query);
+                        card.classList.toggle("search-hidden", !match);
+                        if (match) {
+                            panelHasMatch = true;
+                        }
+                    });
+
+                    const titles = Array.from(panel.querySelectorAll(".card-title"));
+                    titles.forEach(title => {
+                        const match = title.textContent.toLowerCase().includes(query);
+                        title.classList.toggle("search-hidden", !match);
+                        if (match) {
+                            panelHasMatch = true;
+                        }
+                    });
+
+                    panel.classList.toggle("search-hidden", !panelHasMatch);
+                });
+
+                tabButtons.forEach(button => {
+                    const panel = document.getElementById(`tab-${button.dataset.tab}`);
+                    const panelVisible = panel && !panel.classList.contains("search-hidden");
+                    button.classList.toggle("search-hidden", !panelVisible);
+                });
+
+                const firstVisible = panels.find(panel => !panel.classList.contains("search-hidden"));
+                if (firstVisible) {
+                    if (emptyState) {
+                        emptyState.classList.add("search-hidden");
+                    }
+                    const name = firstVisible.id.replace("tab-", "");
+                    switchTab(name);
+                } else {
+                    if (emptyState) {
+                        emptyState.classList.remove("search-hidden");
+                    }
+                    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
+                    document.querySelectorAll(".tab-button").forEach(button => button.classList.remove("active"));
+                }
+            };
+
+            if (settingsSearchInput) {
+                settingsSearchInput.addEventListener("input", applySettingsSearch);
+            }
 
             const hash = location.hash.slice(1);
             if (hash) {
