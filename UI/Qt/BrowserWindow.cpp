@@ -125,7 +125,24 @@ bool FullscreenMode::eventFilter(QObject* obj, QEvent* event)
 ExitFullscreenButton::ExitFullscreenButton(QWidget* parent)
     : QPushButton("Exit fullscreen", parent)
 {
-    setStyleSheet("background-color:rgb(55, 99, 129); color: white; padding: 10px; border-radius: 5px;");
+    setStyleSheet(R"(
+    QPushButton {
+        background-color: rgb(55, 99, 129);
+        color: white;
+        padding: 10px 16px;
+
+        border-radius: 10px;
+        border: none;
+    }
+
+    QPushButton:hover {
+        background-color: rgb(65, 110, 140);
+    }
+
+    QPushButton:pressed {
+        background-color: rgb(45, 85, 110);
+    }
+    )");
     adjustSize();
     hide();
     m_widget_animation = new QPropertyAnimation(this, "pos");

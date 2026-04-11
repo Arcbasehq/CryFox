@@ -171,7 +171,7 @@ static void log_filtered_request(LoadRequest const& request)
     dbgln("ResourceLoader: Filtered request to: \"{}\"", url_for_logging);
 }
 
-static bool should_block_request(LoadRequest const& request)
+static Optional<StringView> blocked_reason(LoadRequest const& request)
 {
     auto const& url = request.url().value();
 
@@ -186,15 +186,15 @@ static bool should_block_request(LoadRequest const& request)
 
     if (is_port_blocked(url.port_or_default())) {
         log_failure(request, ByteString::formatted("Port #{} is blocked", url.port_or_default()));
-        return true;
+        return "port"sv;
     }
 
     if (ContentFilter::the().is_filtered(url)) {
         log_filtered_request(request);
-        return true;
+        return "filtered"sv;
     }
 
-    return false;
+    return {};
 }
 
 template<typename FileHandler, typename ErrorHandler>
@@ -367,7 +367,7 @@ RefPtr<Requests::Request> ResourceLoader::load(LoadRequest& request, GC::Root<On
     log_request_start(request);
     request.start_timer();
 
-    if (should_block_request(request)) {
+    if (auto reason = blocked_reason(request); reason.has_value()) {
         on_complete->function()(false, {}, "Request was blocked"sv);
         return nullptr;
     }

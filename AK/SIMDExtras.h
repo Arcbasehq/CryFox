@@ -189,11 +189,12 @@ namespace Detail {
 template<SIMDVector T, SIMDVector Control, size_t... Idx>
 ALWAYS_INLINE static T shuffle_impl(T a, Control control, IndexSequence<Idx...>)
 {
-    // FIXME: Maybe make the VERIFYs optional, eg on SIMD-DEBUG, to avoid the overhead in performance oriented users, like LibWasm::SIMD
-    // Note: - instead of _ to make the linter happy, as SIMD-DEBUG does not (yet) exist
+    // Skip expensive VERIFYs in release builds for better performance
+#if !defined(NDEBUG)
     constexpr Conditional<IsSigned<ElementOf<Control>>, ssize_t, size_t> N = vector_length<T>;
     // If you hit this verify and want a 0 in these cases instead, use shuffle_or_0
     (([control] { VERIFY(control[Idx] < N); })(), ...);
+#endif
 
     // __builtin_shuffle is only available with GCC, and has quite good codegen
     if constexpr (__has_builtin(__builtin_shuffle))

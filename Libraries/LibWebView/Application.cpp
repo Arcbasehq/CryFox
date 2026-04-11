@@ -22,6 +22,7 @@
 #include <LibWebView/HelperProcess.h>
 #include <LibWebView/Menu.h>
 #include <LibWebView/ProcessType.h>
+#include <LibWebView/TopSitesStore.h>
 #include <LibWebView/URL.h>
 #include <LibWebView/UserAgent.h>
 #include <LibWebView/Utilities.h>
@@ -76,6 +77,7 @@ struct ApplicationBookmarkStoreObserver final : public BookmarkStoreObserver {
 Application::Application(Optional<ByteString> ladybird_binary_path)
     : m_settings(Settings::create({}))
     , m_bookmark_store(BookmarkStore::create({}))
+    , m_top_sites_store(TopSitesStore::create({}))
 {
     VERIFY(!s_the);
     s_the = this;

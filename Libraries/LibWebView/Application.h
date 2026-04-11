@@ -33,6 +33,7 @@
 #include <LibWebView/ProcessManager.h>
 #include <LibWebView/Settings.h>
 #include <LibWebView/StorageJar.h>
+#include <LibWebView/TopSitesStore.h>
 
 #if defined(AK_OS_MACOS)
 #    include <LibIPC/TransportBootstrapMach.h>
@@ -63,6 +64,7 @@ public:
     static ImageDecoderClient::Client& image_decoder_client() { return *the().m_image_decoder_client; }
 
     static BookmarkStore& bookmark_store() { return the().m_bookmark_store; }
+    static TopSitesStore& top_sites_store() { return the().m_top_sites_store; }
     void update_bookmark_action_for_current_web_view();
     void bookmarks_changed(Badge<ApplicationBookmarkStoreObserver>);
     void show_bookmarks_bar_changed(Badge<ApplicationSettingsObserver>);
@@ -257,6 +259,8 @@ private:
 
     BookmarkStore m_bookmark_store;
     OwnPtr<ApplicationBookmarkStoreObserver> m_bookmark_store_observer;
+
+    TopSitesStore m_top_sites_store;
 
     Main::Arguments m_arguments;
     BrowserOptions m_browser_options;

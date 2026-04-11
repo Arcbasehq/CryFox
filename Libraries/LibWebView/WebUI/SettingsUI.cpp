@@ -28,6 +28,9 @@ void SettingsUI::register_interfaces()
     register_interface("setLanguages"sv, [this](auto const& data) {
         set_languages(data);
     });
+    register_interface("setShowBookmarksBar"sv, [this](auto const& data) {
+        set_show_bookmarks_bar(data);
+    });
 
     register_interface("loadAvailableEngines"sv, [this](auto const&) {
         load_available_engines();
@@ -117,6 +120,15 @@ void SettingsUI::set_languages(JsonValue const& languages)
     auto parsed_languages = Settings::parse_json_languages(languages);
     WebView::Application::settings().set_languages(move(parsed_languages));
 
+    load_current_settings();
+}
+
+void SettingsUI::set_show_bookmarks_bar(JsonValue const& show_bookmarks_bar)
+{
+    if (!show_bookmarks_bar.is_bool())
+        return;
+
+    WebView::Application::settings().set_show_bookmarks_bar(show_bookmarks_bar.as_bool());
     load_current_settings();
 }
 

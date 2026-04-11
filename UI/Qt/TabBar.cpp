@@ -103,6 +103,28 @@ TabWidget::TabWidget(QWidget* parent)
     m_tab_bar->setUsesScrollButtons(true);
     m_tab_bar->setDrawBase(false);
 
+    m_tab_bar->setStyleSheet(R"(
+    QTabBar::tab {
+        background: palette(window);
+        border: 1px solid palette(mid);
+        border-bottom: none;
+
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+
+        padding: 6px 12px;
+        margin-right: 2px;
+    }
+
+    QTabBar::tab:selected {
+        background: palette(base);
+    }
+
+    QTabBar::tab:hover {
+        background: palette(light);
+    }
+)");
+
     m_stacked_widget = new QStackedWidget(this);
 
     m_new_tab_button = new QToolButton(this);

@@ -10,6 +10,7 @@
 #include <LibWebView/CookieJar.h>
 #include <LibWebView/HelperProcess.h>
 #include <LibWebView/SourceHighlighter.h>
+#include <LibWebView/TopSitesStore.h>
 #include <LibWebView/ViewImplementation.h>
 #include <LibWebView/WebContentClient.h>
 #include <LibWebView/WebUI.h>
@@ -136,6 +137,8 @@ void WebContentClient::did_finish_loading(u64 page_id, URL::URL url)
             if (listener.on_load_finish)
                 listener.on_load_finish(url);
         }
+
+        Application::top_sites_store().record_visit(url, view->title().to_utf8(), view->favicon_base64_png());
     }
 }
 
@@ -209,6 +212,9 @@ void WebContentClient::did_change_title(u64 page_id, Utf16String title)
             title = Utf16String::from_utf8(view->url().serialize());
 
         view->set_title({}, title);
+
+        if (!title.is_empty())
+            Application::top_sites_store().update_title(view->url(), title.to_utf8());
 
         if (view->on_title_change)
             view->on_title_change(title);
@@ -442,6 +448,7 @@ void WebContentClient::did_start_network_request(u64 page_id, u64 request_id, UR
         if (view->on_network_request_started)
             view->on_network_request_started(request_id, url, method, request_headers, move(request_body), move(initiator_type));
     }
+
 }
 
 void WebContentClient::did_receive_network_response_headers(u64 page_id, u64 request_id, u32 status_code, Optional<String> reason_phrase, Vector<HTTP::Header> response_headers)

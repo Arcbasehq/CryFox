@@ -849,6 +849,7 @@ void PageClient::page_did_finish_network_request(u64 request_id, u64 body_size, 
     client().async_did_finish_network_request(m_id, request_id, body_size, timing_info, network_error);
 }
 
+
 void PageClient::initialize_js_console(Web::DOM::Document& document)
 {
     if (document.is_temporary_document_for_fragment_parsing())

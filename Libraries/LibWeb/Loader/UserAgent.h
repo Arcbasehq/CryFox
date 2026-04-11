@@ -60,7 +60,7 @@ namespace Web {
 #endif
 
 #define BROWSER_NAME "CryFox"
-#define BROWSER_VERSION "1.0"
+#define BROWSER_VERSION "0.0.1"
 
 // NB: Some web servers treat us very badly unless we pretend to be one of the major browsers.
 //     This token is appended to the User-Agent string to improve compatibility.

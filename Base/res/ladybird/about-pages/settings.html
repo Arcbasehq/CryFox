@@ -6,472 +6,115 @@
         <link rel="stylesheet" type="text/css" href="resource://ladybird/ladybird.css" />
         <link rel="stylesheet" type="text/css" href="resource://ladybird/about-pages/webui.css" />
         <style>
-            :root {
-                --page-max-width: 1200px;
-                --sidebar-width: 240px;
-            }
-
-            @media (prefers-color-scheme: light) {
-                :root {
-                    --page-background: #f7f8fb;
-                    --page-background-alt: #edf1f7;
-                    --sidebar-background: #f1f3f8;
-                    --sidebar-border: #d8dde7;
-                    --panel-background: #ffffff;
-                    --panel-border: #d7dde8;
-                    --header-surface: rgba(255, 255, 255, 0.9);
-                    --tab-hover-background: #e9effa;
-                    --tab-active-background: #e1ebff;
-                    --tab-icon-background: #c9d9ff;
-                    --section-title-color: #2b2f3a;
-                    --input-background-color: #ffffff;
-                    --border-color: #cfd6e4;
-                    --accent-color: #0060df;
-                    --accent-strong: #004fc2;
-                    --accent-soft: #d9e7ff;
-                }
+            body {
+                font-family: sans-serif;
+                margin: 0;
+                padding: 20px;
+                background: #fff;
+                color: #000;
             }
 
             @media (prefers-color-scheme: dark) {
-                :root {
-                    --page-background: #1a1c23;
-                    --page-background-alt: #202431;
-                    --sidebar-background: #20242e;
-                    --sidebar-border: #2e3442;
-                    --panel-background: #2a2f3b;
-                    --panel-border: #353b4b;
-                    --header-surface: rgba(26, 29, 36, 0.9);
-                    --tab-hover-background: #262f44;
-                    --tab-active-background: #2a3856;
-                    --tab-icon-background: #3a4d78;
-                    --section-title-color: #f1f3f8;
-                    --input-background-color: #222733;
-                    --border-color: #343b48;
-                    --accent-color: #4c9aff;
-                    --accent-strong: #3d8bfd;
-                    --accent-soft: rgba(76, 154, 255, 0.18);
+                body {
+                    background: #1a1a1a;
+                    color: #ccc;
                 }
             }
 
-            body {
-                font-family: "SerenitySans", sans-serif;
-                background: linear-gradient(180deg, var(--page-background), var(--page-background-alt));
-                min-height: 100vh;
-                max-width: none;
-                margin: 0;
-                padding: 0;
-            }
-
-            header.settings-header {
+            .header {
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
-                gap: 24px;
-                padding: 24px 32px;
-                margin: 0 auto 8px auto;
-                max-width: var(--page-max-width);
-                background-color: var(--header-surface);
-                border-bottom: 1px solid var(--sidebar-border);
-                border-radius: 0 0 16px 16px;
-                backdrop-filter: blur(6px);
+                gap: 12px;
+                margin-bottom: 20px;
+                padding-bottom: 16px;
+                border-bottom: 1px solid #ddd;
             }
 
-            .header-brand {
-                display: flex;
-                align-items: center;
-                gap: 14px;
+            @media (prefers-color-scheme: dark) {
+                .header {
+                    border-bottom-color: #333;
+                }
             }
 
-            header.settings-header h1 {
-                font-size: 22px;
-                font-weight: 600;
+            .header img {
+                height: 32px;
+                width: 32px;
             }
 
-            header.settings-header img {
-                height: 44px;
-                width: 44px;
+            .header h1 {
+                font-size: 18px;
                 margin: 0;
+                font-weight: normal;
             }
 
             .header-search {
-                flex: 1;
-                display: flex;
-                justify-content: flex-end;
+                margin-left: auto;
             }
 
-            .header-search input[type="search"] {
-                width: min(360px, 100%);
-                border-radius: 999px;
-                padding: 10px 16px;
+            .header-search input {
+                padding: 6px 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 13px;
             }
 
-            .settings-shell {
+            @media (prefers-color-scheme: dark) {
+                .header-search input {
+                    background: #2a2a2a;
+                    border-color: #444;
+                    color: #ccc;
+                }
+            }
+
+            .layout {
                 display: grid;
-                grid-template-columns: var(--sidebar-width) 1fr;
-                gap: 24px;
-                max-width: var(--page-max-width);
-                margin: 0 auto;
-                padding: 12px 32px 48px 32px;
+                grid-template-columns: 180px 1fr;
+                gap: 20px;
             }
 
-            .settings-content {
-                min-width: 0;
+            .sidebar {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 8px;
             }
 
-            .search-hidden {
-                display: none !important;
-            }
-
-            .search-empty {
-                background-color: var(--panel-background);
-                border: 1px solid var(--panel-border);
-                border-radius: 12px;
-                padding: 32px 24px;
-                text-align: center;
-                color: var(--empty-text-color, inherit);
-            }
-
-            .search-empty strong {
-                display: block;
-                font-size: 16px;
-                margin-bottom: 6px;
-                color: var(--section-title-color);
-            }
-
-            .settings-sidebar {
-                background-color: var(--sidebar-background);
-                border: 1px solid var(--sidebar-border);
-                border-radius: 14px;
-                padding: 16px;
-                height: fit-content;
-            }
-
-            .sidebar-title {
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                opacity: 0.6;
-                margin-bottom: 10px;
-            }
-
-            hr {
-                height: 1px;
-                background-color: var(--panel-border);
-                border: none;
-            }
-
-            .inline-container {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 16px;
-            }
-
-            .input-with-reset {
-                position: relative;
-                display: flex;
-                width: 60%;
-                min-width: 220px;
-            }
-
-            .input-with-reset input {
-                width: 100% !important;
-                padding-right: 32px;
-            }
-
-            .input-reset-button {
-                position: absolute;
-                right: 12px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                padding: 0 4px;
-                font-size: 18px;
-                opacity: 0.4;
-                cursor: pointer;
-            }
-
-            .input-reset-button:hover {
-                opacity: 0.8;
-            }
-
-            .inline-container input[type="number"],
-            .inline-container input[type="text"],
-            .inline-container input[type="url"],
-            .inline-container select {
-                width: 60%;
-                min-width: 220px;
-            }
-
-            .button-container {
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                margin-top: 20px;
-            }
-
-            .input-field-container {
-                display: flex;
-                align-items: center;
-                justify-content: flex-start;
-                gap: 10px;
-            }
-
-            .input-field-container + .input-field-container {
-                margin-top: 16px;
-            }
-
-            .input-field-container label,
-            .input-field-container p {
-                margin: 0;
-            }
-
-            .forcibly-enabled {
-                font-size: 13px;
-                opacity: 0.7;
-            }
-
-            .description {
-                margin-bottom: 10px;
-                font-size: 13px;
-                opacity: 0.7;
-            }
-
-            label {
-                display: block;
-                margin-bottom: 8px;
-                font-size: 14px;
-            }
-
-            input[type="number"],
-            input[type="text"],
-            input[type="url"],
-            input[type="search"],
-            select {
-                background-color: var(--input-background-color);
-                width: 100%;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 10px 12px;
-            }
-
-            button.primary-button,
-            button.secondary-button {
-                border-radius: 8px;
-                padding: 8px 14px;
-                font-weight: 500;
-            }
-
-            button.primary-button:focus-visible,
-            button.secondary-button:focus-visible,
-            input:focus-visible,
-            select:focus-visible {
-                outline: 2px solid rgba(0, 96, 223, 0.45);
-                outline-offset: 2px;
-            }
-
-            input[type="number"].success,
-            input[type="text"].success,
-            input[type="url"].success {
-                border: 1px solid green;
-            }
-
-            input[type="number"].error,
-            input[type="text"].error,
-            input[type="url"].error {
-                border: 1px solid red;
-            }
-
-            .card-title {
-                color: var(--section-title-color);
-                font-size: 15px;
-                font-weight: 600;
-                margin: 18px 0 8px 4px;
-            }
-
-            .card {
-                background-color: var(--panel-background);
-                border: 1px solid var(--panel-border);
-                border-radius: 12px;
-                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-            }
-
-            .card-body {
-                padding: 18px 20px;
-            }
-
-            .card-group {
-                margin-bottom: 16px;
-            }
-
-            dialog {
-                background-color: var(--panel-background);
-                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
-                width: 90%;
-                max-width: 520px;
-                margin: auto;
-                padding: 0;
-                border: 1px solid var(--panel-border);
-                border-radius: 12px;
-                outline: none;
-            }
-
-            dialog::backdrop {
-                background-color: rgba(0, 0, 0, 0.45);
-            }
-
-            dialog .dialog-header {
-                background-color: var(--sidebar-background);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 15px 20px;
-            }
-
-            dialog .dialog-body {
-                height: 450px;
-                border-top: 1px solid var(--panel-border);
-                display: flex;
-                flex-direction: column;
-                padding: 15px 20px;
-            }
-
-            dialog .dialog-body label {
-                font-size: 16px;
-            }
-
-            dialog .dialog-body hr {
-                margin: 8px 4px 10px 4px;
-            }
-
-            dialog .dialog-form {
-                border-top: 1px solid var(--panel-border);
-                display: flex;
-                flex-direction: column;
-                padding: 15px 20px;
-            }
-
-            dialog .form-group {
-                margin-bottom: 20px;
-            }
-
-            dialog .dialog-footer {
-                display: flex;
-                justify-content: flex-end;
-                border-top: 1px solid var(--panel-border);
-                padding: 15px 20px;
-                gap: 10px;
-            }
-
-            dialog .dialog-title {
-                font-size: 18px;
-                font-weight: 600;
-            }
-
-            dialog .dialog-button {
-                background: none;
-                border: none;
-                outline: none;
-                padding: 0;
-                font-size: 22px;
-                opacity: 0.8;
-                cursor: pointer;
-            }
-
-            dialog .dialog-button:hover {
-                opacity: 1;
-            }
-
-            dialog .dialog-button:disabled {
-                opacity: 0.3;
-            }
-
-            dialog .dialog-list {
-                outline: 1px solid var(--panel-border);
-                border-radius: 8px;
-                margin: 10px 0;
-                font-size: 14px;
-                overflow-y: auto;
-                flex-grow: 1;
-            }
-
-            dialog .dialog-list-item {
-                padding: 10px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            dialog .dialog-list-item:hover {
-                background-color: var(--tab-hover-background);
-            }
-
-            dialog .dialog-list-item-placeholder {
-                padding: 10px;
-                opacity: 0.6;
-            }
-
-            dialog .dialog-list-item-label {
-                flex-grow: 1;
-            }
-
-            dialog .dialog-controls {
-                display: flex;
-                justify-content: flex-end;
-                margin-top: auto;
-                gap: 10px;
-            }
-
-            dialog .dialog-controls button svg {
-                width: 16px;
-                height: 16px;
-            }
-
-            dialog .dialog-controls input,
-            dialog .dialog-controls select {
-                flex-grow: 1;
-            }
-
-            .tab-bar {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                margin-bottom: 0;
-                border-bottom: none;
+            @media (prefers-color-scheme: dark) {
+                .sidebar {
+                    border-color: #333;
+                }
             }
 
             .tab-button {
+                display: block;
+                width: 100%;
+                padding: 8px 10px;
+                border: none;
                 background: none;
-                border: 1px solid transparent;
-                border-left: 3px solid transparent;
-                padding: 10px 12px;
-                border-radius: 10px;
-                font-size: 14px;
-                font-weight: 500;
-                color: inherit;
-                opacity: 0.8;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 10px;
                 text-align: left;
+                font-size: 14px;
+                cursor: pointer;
+                border-radius: 4px;
+                color: inherit;
             }
 
             .tab-button:hover {
-                opacity: 1;
-                background-color: var(--tab-hover-background);
+                background: #f0f0f0;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .tab-button:hover {
+                    background: #2a2a2a;
+                }
             }
 
             .tab-button.active {
-                border-left-color: var(--accent-color);
-                background-color: var(--tab-active-background);
-                opacity: 1;
+                background: #e0e0e0;
             }
 
-            .tab-button.active::before {
-                background: var(--accent-color);
-                box-shadow: none;
+            @media (prefers-color-scheme: dark) {
+                .tab-button.active {
+                    background: #333;
+                }
             }
 
             .tab-panel {
@@ -482,249 +125,506 @@
                 display: block;
             }
 
-            @media (max-width: 900px) {
-                header.settings-header {
-                    flex-direction: column;
-                    align-items: stretch;
-                    border-radius: 0 0 12px 12px;
-                }
+            .section-title {
+                font-size: 13px;
+                font-weight: bold;
+                margin: 20px 0 10px 0;
+                color: #666;
+            }
 
-                .settings-shell {
+            @media (prefers-color-scheme: dark) {
+                .section-title {
+                    color: #888;
+                }
+            }
+
+            .card {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                margin-bottom: 2px;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .card {
+                    border-color: #333;
+                }
+            }
+
+            .card-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 16px;
+                gap: 16px;
+            }
+
+            .card-row + .card-row {
+                border-top: 1px solid #ddd;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .card-row + .card-row {
+                    border-top-color: #333;
+                }
+            }
+
+            .card-info strong {
+                font-size: 14px;
+                font-weight: normal;
+            }
+
+            .card-info small {
+                display: block;
+                font-size: 12px;
+                color: #666;
+                margin-top: 2px;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .card-info small {
+                    color: #888;
+                }
+            }
+
+            .card-action {
+                flex-shrink: 0;
+            }
+
+            input[type="text"],
+            input[type="url"],
+            input[type="number"],
+            select {
+                padding: 6px 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 13px;
+                background: #fff;
+                color: #000;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                input[type="text"],
+                input[type="url"],
+                input[type="number"],
+                select {
+                    background: #2a2a2a;
+                    border-color: #444;
+                    color: #ccc;
+                }
+            }
+
+            select {
+                cursor: pointer;
+            }
+
+            input[type="checkbox"][switch] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 40px;
+                height: 22px;
+                border-radius: 11px;
+                background: #ccc;
+                cursor: pointer;
+                position: relative;
+            }
+
+            input[type="checkbox"][switch]::after {
+                content: '';
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #fff;
+            }
+
+            input[type="checkbox"][switch]:checked {
+                background: #666;
+            }
+
+            input[type="checkbox"][switch]:checked::after {
+                left: 20px;
+            }
+
+            button {
+                padding: 6px 14px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background: #f5f5f5;
+                font-size: 13px;
+                cursor: pointer;
+                color: inherit;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                button {
+                    background: #2a2a2a;
+                    border-color: #444;
+                }
+            }
+
+            button:hover {
+                background: #e8e8e8;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                button:hover {
+                    background: #333;
+                }
+            }
+
+            button.danger-button {
+                color: #c00;
+                border-color: #c00;
+            }
+
+            .dialog {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 0;
+                max-width: 500px;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .dialog {
+                    background: #1a1a1a;
+                    border-color: #444;
+                }
+            }
+
+            .dialog::backdrop {
+                background: rgba(0,0,0,0.5);
+            }
+
+            .dialog-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .dialog-header {
+                    border-bottom-color: #333;
+                }
+            }
+
+            .dialog-title {
+                font-size: 15px;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .dialog-close {
+                background: none;
+                border: none;
+                font-size: 20px;
+                cursor: pointer;
+                padding: 0;
+                color: inherit;
+            }
+
+            .dialog-body {
+                padding: 16px;
+            }
+
+            .dialog-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                padding: 12px 16px;
+                border-top: 1px solid #ddd;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .dialog-footer {
+                    border-top-color: #333;
+                }
+            }
+
+            .dialog-list {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                margin: 10px 0;
+                max-height: 250px;
+                overflow-y: auto;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .dialog-list {
+                    border-color: #333;
+                }
+            }
+
+            .dialog-list-item {
+                padding: 8px 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .dialog-list-item + .dialog-list-item {
+                border-top: 1px solid #ddd;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .dialog-list-item + .dialog-list-item {
+                    border-top-color: #333;
+                }
+            }
+
+            .dialog-controls {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+            }
+
+            .dialog-controls input,
+            .dialog-controls select {
+                flex: 1;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            .search-hidden {
+                display: none !important;
+            }
+
+            .search-empty {
+                text-align: center;
+                padding: 40px;
+                color: #666;
+            }
+
+            .description {
+                font-size: 12px;
+                color: #666;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .description {
+                    color: #888;
+                }
+            }
+
+            @media (max-width: 700px) {
+                .layout {
                     grid-template-columns: 1fr;
-                    padding: 12px 20px 40px 20px;
                 }
 
-                .settings-sidebar {
-                    padding: 12px;
-                }
-
-                .tab-bar {
-                    flex-direction: row;
+                .sidebar {
+                    display: flex;
                     flex-wrap: wrap;
+                    gap: 4px;
+                    border: none;
+                    padding: 0;
                 }
 
                 .tab-button {
-                    flex: 1 1 140px;
-                }
-
-                .inline-container {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
-
-                .inline-container input[type="number"],
-                .inline-container input[type="text"],
-                .inline-container input[type="url"],
-                .inline-container select,
-                .input-with-reset {
-                    width: 100%;
-                    min-width: unset;
+                    flex: 1 1 auto;
+                    text-align: center;
                 }
             }
         </style>
     </head>
     <body>
-        <header class="settings-header">
-            <div class="header-brand">
-                <picture>
-                    <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
-                </picture>
-                <h1>CryFox Settings</h1>
-            </div>
+        <header class="header">
+            <img src="resource://icons/48x48/cryfox.png" alt="CryFox" />
+            <h1>Settings</h1>
             <div class="header-search">
-                <input id="settings-search" type="search" placeholder="Search settings" aria-label="Search settings" />
+                <input id="settings-search" type="search" placeholder="Search" />
             </div>
         </header>
 
-        <div class="settings-shell">
-            <nav class="settings-sidebar">
-                <p class="sidebar-title">Categories</p>
-                <div class="tab-bar">
-                    <button class="tab-button active" data-tab="general">
-                        <i class="fa-solid fa-house"></i> General
-                    </button>
-                    <button class="tab-button" data-tab="search">
-                        <i class="fa-solid fa-magnifying-glass"></i> Search
-                    </button>
-                    <button class="tab-button" data-tab="permissions">
-                        <i class="fa-solid fa-shield-alt"></i> Permissions
-                    </button>
-                    <button class="tab-button" data-tab="privacy"><i class="fa-solid fa-lock"></i> Privacy</button>
-                    <button class="tab-button" data-tab="network">
-                        <i class="fa-solid fa-network-wired"></i> Network
-                    </button>
-                </div>
+        <div class="layout">
+            <nav class="sidebar">
+                <button class="tab-button active" data-tab="general">General</button>
+                <button class="tab-button" data-tab="search">Search</button>
+                <button class="tab-button" data-tab="permissions">Permissions</button>
+                <button class="tab-button" data-tab="privacy">Privacy</button>
+                <button class="tab-button" data-tab="network">Network</button>
             </nav>
 
-            <main class="settings-content">
-                <div id="settings-search-empty" class="search-empty search-hidden" role="status" aria-live="polite">
-                    <strong>No settings found</strong>
-                    Try a different search term.
+            <main>
+                <div id="settings-search-empty" class="search-empty search-hidden">
+                    No results found
                 </div>
-                <div class="tab-panel active" id="tab-general">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="card-group inline-container">
-                                <label for="new-tab-page-url">New Tab Page URL</label>
-                                <div class="input-with-reset">
-                                    <input id="new-tab-page-url" type="url" placeholder="about:newtab" />
-                                    <button
-                                        id="new-tab-page-url-reset"
-                                        class="input-reset-button"
-                                        title="Restore default"
-                                    >
-                                        &times;
-                                    </button>
-                                </div>
-                            </div>
 
-                            <div class="card-group inline-container">
-                                <label for="default-zoom-level">Default Zoom Level</label>
+                <div class="tab-panel active" id="tab-general">
+                    <p class="section-title">Startup</p>
+                    <div class="card">
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>New Tab Page</strong>
+                                <small>URL for new tabs</small>
+                            </div>
+                            <div class="card-action">
+                                <input id="new-tab-page-url" type="url" placeholder="about:newtab" style="width: 200px" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="section-title">Appearance</p>
+                    <div class="card">
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Default Zoom</strong>
+                            </div>
+                            <div class="card-action">
                                 <select id="default-zoom-level"></select>
                             </div>
-
-                            <div class="card-group inline-container">
-                                <label for="languages-settings">Languages</label>
-                                <button id="languages-settings" class="secondary-button">Settings...</button>
+                        </div>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Languages</strong>
+                            </div>
+                            <div class="card-action">
+                                <button id="languages-settings">Configure...</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="tab-panel" id="tab-search">
+                    <p class="section-title">Search Engine</p>
                     <div class="card">
-                        <div class="card-body">
-                            <p class="card-group">Default Search Engine</p>
-                            <div class="card-group">
-                                <p class="description">Select the search engine to use in the address bar.</p>
-
-                                <div class="inline-container">
-                                    <select id="search-engine" style="width: 100%">
-                                        <option value="">Disable search</option>
-                                        <hr />
-                                    </select>
-                                    <button id="search-settings" class="secondary-button">Settings...</button>
-                                </div>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Default Search Engine</strong>
+                            </div>
+                            <div class="card-action">
+                                <select id="search-engine"></select>
+                                <button id="search-settings">Manage...</button>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-body">
-                            <p class="card-group">Search Suggestions</p>
-                            <div class="card-group">
-                                <p class="description">Select the engine that will provide search suggestions.</p>
-                                <select id="autocomplete-engine">
-                                    <option value="">Disable search suggestions</option>
-                                    <hr />
-                                </select>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Search Suggestions</strong>
+                            </div>
+                            <div class="card-action">
+                                <select id="autocomplete-engine"></select>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="tab-panel" id="tab-permissions">
+                    <p class="section-title">Media</p>
                     <div class="card">
-                        <div class="card-body">
-                            <div class="card-group inline-container">
-                                <span>Autoplay</span>
-                                <span id="autoplay-forcibly-enabled" class="forcibly-enabled hidden">
-                                    This setting is controlled via the command line
-                                </span>
-                                <button id="autoplay-settings" class="secondary-button">Settings...</button>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Autoplay</strong>
+                            </div>
+                            <div class="card-action">
+                                <span id="autoplay-forcibly-enabled" class="hidden">(command line)</span>
+                                <button id="autoplay-settings">Configure...</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="tab-panel" id="tab-privacy">
-                    <h3 class="card-title">Browsing Data</h3>
+                    <p class="section-title">Privacy</p>
                     <div class="card">
-                        <div class="card-body">
-                            <p id="browsing-data-total-size" class="card-group"></p>
-
-                            <div class="card-group">
-                                <div class="inline-container">
-                                    <div>
-                                        <label for="browsing-data-settings-max-disk-cache-size">
-                                            Maximum disk cache size
-                                        </label>
-                                        <p class="description">Limit the space used for the HTTP disk cache.</p>
-                                    </div>
-                                    <div class="input-field-container">
-                                        <input
-                                            id="browsing-data-settings-max-disk-cache-size"
-                                            type="number"
-                                            min="1"
-                                            style="width: 150px"
-                                        />
-                                        <select id="browsing-data-settings-max-disk-cache-unit" style="width: 80px">
-                                            <option value="MiB">MiB</option>
-                                            <option value="GiB">GiB</option>
-                                        </select>
-                                    </div>
-                                </div>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Global Privacy Control</strong>
+                            </div>
+                            <div class="card-action">
+                                <input id="global-privacy-control-toggle" type="checkbox" switch />
+                            </div>
+                        </div>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Bookmarks Bar</strong>
+                            </div>
+                            <div class="card-action">
+                                <input id="show-bookmarks-bar-toggle" type="checkbox" switch />
                             </div>
                         </div>
                     </div>
 
+                    <p class="section-title">Browsing Data</p>
                     <div class="card">
-                        <div class="card-body">
-                            <div class="card-group inline-container">
-                                <span>Clear Browsing Data</span>
-                                <button id="browsing-data-settings" class="secondary-button">Clear...</button>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Disk Cache</strong>
+                                <small id="browsing-data-total-size">Calculating...</small>
+                            </div>
+                            <div class="card-action">
+                                <input id="browsing-data-settings-max-disk-cache-size" type="number" min="1" style="width: 70px" />
+                                <select id="browsing-data-settings-max-disk-cache-unit" style="width: 60px">
+                                    <option value="MiB">MiB</option>
+                                    <option value="GiB">GiB</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
-
-                    <h3 class="card-title">Privacy</h3>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="card-group">
-                                <div class="inline-container">
-                                    <label for="global-privacy-control-toggle">Global Privacy Control</label>
-                                    <input id="global-privacy-control-toggle" type="checkbox" switch />
-                                </div>
-                                <p class="description">Tell websites not to sell or share your data.</p>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>Clear Browsing Data</strong>
+                            </div>
+                            <div class="card-action">
+                                <button id="browsing-data-settings" class="danger-button">Clear...</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="tab-panel" id="tab-network">
-                    <h3 class="card-title">DNS Settings</h3>
+                    <p class="section-title">DNS</p>
                     <div class="card">
-                        <div class="card-body">
-                            <span id="dns-forcibly-enabled" class="forcibly-enabled hidden">
-                                This setting is controlled via the command line
-                            </span>
-
-                            <div class="card-group inline-container" id="dns-settings-container">
-                                <label for="dns-upstream">DNS Upstream</label>
+                        <div class="card-row">
+                            <div class="card-info">
+                                <strong>DNS Mode</strong>
+                            </div>
+                            <div class="card-action">
+                                <span id="dns-forcibly-enabled" class="hidden">(command line)</span>
                                 <select id="dns-upstream">
                                     <option value="system">System DNS</option>
-                                    <option value="custom">Custom DNS Server</option>
+                                    <option value="custom">Custom</option>
                                 </select>
                             </div>
-                            <div id="custom-dns-settings" class="hidden">
-                                <div class="card-group inline-container">
-                                    <label for="dns-type">Type</label>
+                        </div>
+                    </div>
+                    <div id="custom-dns-settings" class="hidden">
+                        <div class="card" style="margin-top: 2px">
+                            <div class="card-row">
+                                <div class="card-info">
+                                    <strong>Type</strong>
+                                </div>
+                                <div class="card-action">
                                     <select id="dns-type">
                                         <option value="udp">UDP</option>
                                         <option value="tls">TLS</option>
                                     </select>
                                 </div>
-                                <div class="card-group inline-container">
-                                    <label for="dnssec-toggle">Validate DNSSEC Locally</label>
+                            </div>
+                            <div class="card-row">
+                                <div class="card-info">
+                                    <strong>DNSSEC</strong>
+                                </div>
+                                <div class="card-action">
                                     <input id="dnssec-toggle" type="checkbox" switch />
                                 </div>
-                                <div class="card-group inline-container">
-                                    <label for="dns-server">DNS Server (IP or hostname)</label>
-                                    <input id="dns-server" type="text" />
+                            </div>
+                            <div class="card-row">
+                                <div class="card-info">
+                                    <strong>Server</strong>
                                 </div>
-                                <div class="card-group inline-container">
-                                    <label for="dns-port">Port</label>
-                                    <input id="dns-port" type="text" placeholder="53" />
+                                <div class="card-action">
+                                    <input id="dns-server" type="text" placeholder="1.1.1.1" style="width: 150px" />
+                                </div>
+                            </div>
+                            <div class="card-row">
+                                <div class="card-info">
+                                    <strong>Port</strong>
+                                </div>
+                                <div class="card-action">
+                                    <input id="dns-port" type="text" placeholder="53" style="width: 70px" />
                                 </div>
                             </div>
                         </div>
@@ -733,137 +633,119 @@
             </main>
         </div>
 
-        <dialog id="languages-dialog" closedby="any">
+        <!-- Languages Dialog -->
+        <dialog id="languages-dialog" class="dialog" closedby="any">
             <div class="dialog-header">
                 <h3 class="dialog-title">Languages</h3>
-                <button id="languages-close" class="close-button dialog-button">&times;</button>
+                <button id="languages-close" class="dialog-close">&times;</button>
             </div>
             <div class="dialog-body">
-                <p class="description">Choose languages for websites in order of preference</p>
+                <p class="description">Choose languages for websites.</p>
                 <div id="languages-list" class="dialog-list"></div>
                 <div class="dialog-controls">
                     <select id="languages-select">
-                        <option value="">Select a language to add...</option>
+                        <option value="">Select...</option>
                     </select>
-                    <button id="languages-add" class="primary-button" disabled>Add</button>
+                    <button id="languages-add">Add</button>
                 </div>
             </div>
         </dialog>
 
-        <dialog id="search-dialog" closedby="any">
+        <!-- Search Dialog -->
+        <dialog id="search-dialog" class="dialog" closedby="any">
             <div class="dialog-header">
-                <h3 class="dialog-title">Search Settings</h3>
-                <button id="search-close" class="close-button dialog-button">&times;</button>
-            </div>
-            <div class="dialog-body" style="height: 300px">
-                <p class="description">Manage custom search engines</p>
-                <div id="search-list" class="dialog-list"></div>
-            </div>
-            <div class="dialog-form">
-                <div class="form-group">
-                    <label for="search-custom-name">Search Engine Name</label>
-                    <input id="search-custom-name" type="text" placeholder="Example" />
-                </div>
-                <div class="form-group">
-                    <label for="search-custom-url">Search URL</label>
-                    <p class="description">Use %s as a placeholder for the search query</p>
-                    <input id="search-custom-url" type="url" placeholder="https://example.com/search?q=%s" />
-                </div>
-                <div class="dialog-controls">
-                    <button id="search-custom-add" class="primary-button">Add&nbsp;Engine</button>
-                </div>
-            </div>
-        </dialog>
-
-        <dialog id="site-settings" closedby="any">
-            <div class="dialog-header">
-                <h3 id="site-settings-title" class="dialog-title"></h3>
-                <button id="site-settings-close" class="close-button dialog-button">&times;</button>
+                <h3 class="dialog-title">Search Engines</h3>
+                <button id="search-close" class="dialog-close">&times;</button>
             </div>
             <div class="dialog-body">
-                <div class="inline-container">
-                    <label for="site-settings-global">Enable on all sites</label>
-                    <input id="site-settings-global" type="checkbox" switch />
+                <div id="search-list" class="dialog-list"></div>
+                <div class="dialog-controls">
+                    <input id="search-custom-name" type="text" placeholder="Name" />
+                    <input id="search-custom-url" type="url" placeholder="URL with %s" />
+                    <button id="search-custom-add">Add</button>
                 </div>
-                <hr />
-                <label>Allowlist</label>
+            </div>
+        </dialog>
+
+        <!-- Site Settings Dialog -->
+        <dialog id="site-settings" class="dialog" closedby="any">
+            <div class="dialog-header">
+                <h3 id="site-settings-title" class="dialog-title"></h3>
+                <button id="site-settings-close" class="dialog-close">&times;</button>
+            </div>
+            <div class="dialog-body">
+                <div class="card-row" style="padding: 0 0 12px 0; border: none;">
+                    <div class="card-info">
+                        <strong>Enable globally</strong>
+                    </div>
+                    <div class="card-action">
+                        <input id="site-settings-global" type="checkbox" switch />
+                    </div>
+                </div>
+                <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 12px" />
                 <div id="site-settings-list" class="dialog-list"></div>
                 <div class="dialog-controls">
                     <input id="site-settings-input" type="text" placeholder="example.com" />
-                    <button id="site-settings-add" class="primary-button">Add&nbsp;Site</button>
+                    <button id="site-settings-add">Add</button>
                 </div>
             </div>
             <div class="dialog-footer">
-                <button id="site-settings-remove-all" class="secondary-button">Remove All Sites</button>
+                <button id="site-settings-remove-all" class="danger-button">Remove All</button>
             </div>
         </dialog>
 
-        <dialog id="browsing-data-settings-dialog" closedby="any">
+        <!-- Clear Browsing Data Dialog -->
+        <dialog id="browsing-data-settings-dialog" class="dialog" closedby="any">
             <div class="dialog-header">
                 <h3 class="dialog-title">Clear Browsing Data</h3>
-                <button id="browsing-data-settings-close" class="close-button dialog-button">&times;</button>
+                <button id="browsing-data-settings-close" class="dialog-close">&times;</button>
             </div>
-            <div class="dialog-body" style="height: auto">
-                <div class="input-field-container">
-                    <p>Remove&nbsp;browsing&nbsp;data&nbsp;from:</p>
-                    <select id="clear-browsing-data-time-range">
-                        <option value="lastHour">Last hour</option>
-                        <option value="last4Hours">Last 4 hours</option>
-                        <option value="today">Today</option>
-                        <option value="all" selected>All time</option>
-                    </select>
+            <div class="dialog-body">
+                <div class="card-row" style="padding: 0 0 12px 0; border: none;">
+                    <div class="card-info">
+                        <strong>Time range</strong>
+                    </div>
+                    <div class="card-action">
+                        <select id="clear-browsing-data-time-range">
+                            <option value="lastHour">Last hour</option>
+                            <option value="last4Hours">Last 4 hours</option>
+                            <option value="today">Today</option>
+                            <option value="all" selected>All time</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="input-field-container">
-                    <input id="clear-browsing-data-cached-files" type="checkbox" value="" checked />
-                    <label for="clear-browsing-data-cached-files">
-                        Cached files<span id="clear-browsing-data-cached-files-size"></span>
-                        <p class="description">Remove items that help pages load faster</p>
-                    </label>
+                <hr style="border: none; border-top: 1px solid #ddd; margin-bottom: 12px" />
+                <div class="card-row" style="padding: 0 0 8px 0; border: none;">
+                    <div class="card-info">
+                        <input id="clear-browsing-data-cached-files" type="checkbox" checked />
+                        <label for="clear-browsing-data-cached-files" style="display: inline; margin-left: 6px">
+                            Cached files
+                            <span id="clear-browsing-data-cached-files-size"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="input-field-container">
-                    <input id="clear-browsing-data-site-data" type="checkbox" value="" checked />
-                    <label for="clear-browsing-data-site-data">
-                        Cookies and site data<span id="clear-browsing-data-site-data-size"></span>
-                        <p class="description">Remove items that may sign you out of most sites</p>
-                    </label>
+                <div class="card-row" style="padding: 0 0 12px 0; border: none;">
+                    <div class="card-info">
+                        <input id="clear-browsing-data-site-data" type="checkbox" checked />
+                        <label for="clear-browsing-data-site-data" style="display: inline; margin-left: 6px">
+                            Cookies and site data
+                            <span id="clear-browsing-data-site-data-size"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="button-container">
-                    <button id="clear-browsing-data-remove-data" class="secondary-button">Remove Data</button>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="clear-browsing-data-remove-data" class="danger-button">Clear Now</button>
                 </div>
             </div>
         </dialog>
 
         <script>
-            // FIXME: When we support per-glyph font fallbacks, replace these SVGs with analogous code points.
-            const upwardArrowSVG =
-                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
-            const downwardArrowSVG =
-                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-
-            const containsValidURL = input => {
-                return input.value.length !== 0 && input.checkValidity();
-            };
-        </script>
-
-        <script src="resource://ladybird/about-pages/settings/default-zoom-level.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/languages.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/network.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/new-tab-page.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/permissions.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/privacy.js" type="module"></script>
-        <script src="resource://ladybird/about-pages/settings/search.js" type="module"></script>
-
-        <script type="module">
             function switchTab(name) {
                 const button = document.querySelector(`.tab-button[data-tab="${name}"]`);
                 const panel = document.getElementById(`tab-${name}`);
-                if (!button || !panel) {
-                    return;
-                }
-
+                if (!button || !panel) return;
                 document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
                 document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-
                 button.classList.add("active");
                 panel.classList.add("active");
             }
@@ -871,83 +753,40 @@
             document.querySelectorAll(".tab-button").forEach(button => {
                 button.addEventListener("click", () => {
                     switchTab(button.dataset.tab);
-                    history.replaceState(null, "", `#${button.dataset.tab}`);
                 });
             });
 
             const settingsSearchInput = document.getElementById("settings-search");
-
             const applySettingsSearch = () => {
-                if (!settingsSearchInput) {
-                    return;
-                }
-
+                if (!settingsSearchInput) return;
                 const query = settingsSearchInput.value.trim().toLowerCase();
                 const panels = Array.from(document.querySelectorAll(".tab-panel"));
                 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
                 const emptyState = document.getElementById("settings-search-empty");
 
                 if (!query) {
-                    panels.forEach(panel => {
-                        panel.classList.remove("search-hidden");
-                        panel.querySelectorAll(".card, .card-title").forEach(el => {
-                            el.classList.remove("search-hidden");
-                        });
-                    });
+                    panels.forEach(panel => panel.classList.remove("search-hidden"));
                     tabButtons.forEach(button => button.classList.remove("search-hidden"));
-                    if (emptyState) {
-                        emptyState.classList.add("search-hidden");
-                    }
-                    const hash = location.hash.slice(1);
-                    if (hash) {
-                        switchTab(hash);
-                    }
+                    if (emptyState) emptyState.classList.add("search-hidden");
                     return;
                 }
 
                 panels.forEach(panel => {
-                    let panelHasMatch = false;
-
-                    const cards = Array.from(panel.querySelectorAll(".card"));
-                    cards.forEach(card => {
-                        const match = card.textContent.toLowerCase().includes(query);
-                        card.classList.toggle("search-hidden", !match);
-                        if (match) {
-                            panelHasMatch = true;
-                        }
-                    });
-
-                    const titles = Array.from(panel.querySelectorAll(".card-title"));
-                    titles.forEach(title => {
-                        const match = title.textContent.toLowerCase().includes(query);
-                        title.classList.toggle("search-hidden", !match);
-                        if (match) {
-                            panelHasMatch = true;
-                        }
-                    });
-
-                    panel.classList.toggle("search-hidden", !panelHasMatch);
+                    let match = panel.textContent.toLowerCase().includes(query);
+                    panel.classList.toggle("search-hidden", !match);
                 });
 
                 tabButtons.forEach(button => {
                     const panel = document.getElementById(`tab-${button.dataset.tab}`);
-                    const panelVisible = panel && !panel.classList.contains("search-hidden");
-                    button.classList.toggle("search-hidden", !panelVisible);
+                    button.classList.toggle("search-hidden", panel && panel.classList.contains("search-hidden"));
                 });
 
-                const firstVisible = panels.find(panel => !panel.classList.contains("search-hidden"));
+                const firstVisible = panels.find(p => !p.classList.contains("search-hidden"));
                 if (firstVisible) {
-                    if (emptyState) {
-                        emptyState.classList.add("search-hidden");
-                    }
-                    const name = firstVisible.id.replace("tab-", "");
-                    switchTab(name);
+                    if (emptyState) emptyState.classList.add("search-hidden");
+                    switchTab(firstVisible.id.replace("tab-", ""));
                 } else {
-                    if (emptyState) {
-                        emptyState.classList.remove("search-hidden");
-                    }
-                    document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("active"));
-                    document.querySelectorAll(".tab-button").forEach(button => button.classList.remove("active"));
+                    if (emptyState) emptyState.classList.remove("search-hidden");
                 }
             };
 
@@ -955,17 +794,9 @@
                 settingsSearchInput.addEventListener("input", applySettingsSearch);
             }
 
-            const hash = location.hash.slice(1);
-            if (hash) {
-                switchTab(hash);
-            }
-
-            // FIXME: Remove this once closedby="any" triggers for Esc key.
             document.querySelectorAll("dialog").forEach(dialog => {
                 dialog.addEventListener("keydown", event => {
-                    if (event.key === "Escape") {
-                        dialog.close();
-                    }
+                    if (event.key === "Escape") dialog.close();
                 });
             });
 
@@ -973,5 +804,14 @@
                 ladybird.sendMessage("loadCurrentSettings");
             });
         </script>
+
+        <script src="resource://ladybird/about-pages/settings/default-zoom-level.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/languages.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/bookmarks-bar.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/network.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/new-tab-page.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/permissions.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/privacy.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/search.js" type="module"></script>
     </body>
 </html>

@@ -23,6 +23,7 @@ set(SOURCES
     SiteIsolation.cpp
     SourceHighlighter.cpp
     StorageJar.cpp
+    TopSitesStore.cpp
     URL.cpp
     UserAgent.cpp
     Utilities.cpp
@@ -30,6 +31,7 @@ set(SOURCES
     WebContentClient.cpp
     WebUI.cpp
     WebUI/BookmarksUI.cpp
+    WebUI/NewTabUI.cpp
     WebUI/ProcessesUI.cpp
     WebUI/SettingsUI.cpp
 )

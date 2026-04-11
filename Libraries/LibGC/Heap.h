@@ -137,11 +137,18 @@ private:
 
     ALWAYS_INLINE CellAllocator& allocator_for_size(size_t cell_size)
     {
-        // FIXME: Use binary search?
-        for (auto& allocator : m_size_based_cell_allocators) {
-            if (allocator->cell_size() >= cell_size)
-                return *allocator;
+        // The allocators are sorted by cell_size, use binary search
+        auto* begin = m_size_based_cell_allocators.data();
+        size_t lo = 0, hi = m_size_based_cell_allocators.size();
+        while (lo < hi) {
+            size_t mid = lo + (hi - lo) / 2;
+            if (begin[mid]->cell_size() < cell_size)
+                lo = mid + 1;
+            else
+                hi = mid;
         }
+        if (lo < m_size_based_cell_allocators.size())
+            return *m_size_based_cell_allocators[lo];
         dbgln("Cannot get CellAllocator for cell size {}, largest available is {}!", cell_size, m_size_based_cell_allocators.last()->cell_size());
         VERIFY_NOT_REACHED();
     }
@@ -155,7 +162,7 @@ private:
         }
     }
 
-    static constexpr size_t GC_MIN_BYTES_THRESHOLD { 4 * 1024 * 1024 };
+    static constexpr size_t GC_MIN_BYTES_THRESHOLD { 8 * 1024 * 1024 };
     size_t m_gc_bytes_threshold { GC_MIN_BYTES_THRESHOLD };
     size_t m_allocated_bytes_since_last_gc { 0 };
 
