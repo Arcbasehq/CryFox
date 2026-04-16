@@ -1044,12 +1044,8 @@ public:
     Optional<CSS::CustomPropertyRegistration const&> get_registered_custom_property(FlyString const& name) const;
     NonnullRefPtr<CSS::StyleValue const> custom_property_initial_value(FlyString const& name) const;
 
-    HashMap<FlyString, NonnullRefPtr<CSS::CounterStyle const>> const& registered_counter_styles() const;
-
     CSS::StyleScope const& style_scope() const { return m_style_scope; }
     CSS::StyleScope& style_scope() { return m_style_scope; }
-
-    void invalidate_counter_style_cache() { m_needs_counter_style_cache_update = true; }
 
     void exit_pointer_lock();
 
@@ -1081,6 +1077,7 @@ private:
 
     void invalidate_style_of_elements_affected_by_has();
 
+    void clear_layout_and_paintable_nodes_for_inactive_document();
     void tear_down_layout_tree();
 
     void update_active_element();
@@ -1488,9 +1485,6 @@ private:
     // https://www.w3.org/TR/css-properties-values-api-1/#dom-window-registeredpropertyset-slot
     HashMap<FlyString, CSS::CustomPropertyRegistration> m_registered_property_set;
     HashMap<FlyString, CSS::CustomPropertyRegistration> m_cached_registered_properties_from_css_property_rules;
-
-    bool m_needs_counter_style_cache_update { true };
-    HashMap<FlyString, NonnullRefPtr<CSS::CounterStyle const>> m_registered_counter_styles;
 
     CSS::StyleScope m_style_scope;
 

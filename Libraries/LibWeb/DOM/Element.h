@@ -24,6 +24,7 @@
 #include <LibWeb/Export.h>
 #include <LibWeb/HTML/AttributeNames.h>
 #include <LibWeb/HTML/EventLoop/Task.h>
+#include <LibWeb/HTML/Parser/ParserScriptingMode.h>
 #include <LibWeb/HTML/ScrollOptions.h>
 #include <LibWeb/HTML/TagNames.h>
 #include <LibWeb/HTML/TokenizedFeatures.h>
@@ -254,7 +255,7 @@ public:
     CSS::StyleSheetList& document_or_shadow_root_style_sheets();
     ElementByIdMap& document_or_shadow_root_element_by_id_map();
 
-    WebIDL::ExceptionOr<GC::Ref<DOM::DocumentFragment>> parse_fragment(StringView markup);
+    WebIDL::ExceptionOr<GC::Ref<DOM::DocumentFragment>> parse_fragment(StringView markup, HTML::ParserScriptingMode = HTML::ParserScriptingMode::Inert);
 
     [[nodiscard]] GC::Ptr<Element const> element_to_inherit_style_from(Optional<CSS::PseudoElement>) const;
 
@@ -355,6 +356,7 @@ public:
     bool has_pseudo_element(CSS::PseudoElement) const;
     bool has_pseudo_elements() const;
     void clear_pseudo_element_nodes(Badge<Layout::TreeBuilder>);
+    void clear_pseudo_element_layout_nodes(Badge<Document>);
 
     void serialize_children_as_json(JsonObjectSerializer<StringBuilder>&) const;
 

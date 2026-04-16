@@ -8,7 +8,6 @@
 #include <LibURL/Parser.h>
 #include <LibWebView/Application.h>
 #include <LibWebView/SearchEngine.h>
-#include <LibWebView/URL.h>
 #include <LibWebView/WebUI/SettingsUI.h>
 
 namespace WebView {
@@ -28,8 +27,8 @@ void SettingsUI::register_interfaces()
     register_interface("setLanguages"sv, [this](auto const& data) {
         set_languages(data);
     });
-    register_interface("setShowBookmarksBar"sv, [this](auto const& data) {
-        set_show_bookmarks_bar(data);
+    register_interface("setBrowsingBehavior"sv, [this](auto const& data) {
+        set_browsing_behavior(data);
     });
 
     register_interface("loadAvailableEngines"sv, [this](auto const&) {
@@ -46,12 +45,6 @@ void SettingsUI::register_interfaces()
     });
     register_interface("setAutocompleteEngine"sv, [this](auto const& data) {
         set_autocomplete_engine(data);
-    });
-    register_interface("searchForQuery"sv, [this](auto const& data) {
-        search_for_query(data);
-    });
-    register_interface("navigateFromNewTab"sv, [this](auto const& data) {
-        navigate_from_new_tab(data);
     });
 
     register_interface("loadForciblyEnabledSiteSettings"sv, [this](auto const&) {
@@ -123,12 +116,11 @@ void SettingsUI::set_languages(JsonValue const& languages)
     load_current_settings();
 }
 
-void SettingsUI::set_show_bookmarks_bar(JsonValue const& show_bookmarks_bar)
+void SettingsUI::set_browsing_behavior(JsonValue const& browsing_behavior)
 {
-    if (!show_bookmarks_bar.is_bool())
-        return;
+    auto parsed_browsing_behavior = Settings::parse_browsing_behavior(browsing_behavior);
+    WebView::Application::settings().set_browsing_behavior(parsed_browsing_behavior);
 
-    WebView::Application::settings().set_show_bookmarks_bar(show_bookmarks_bar.as_bool());
     load_current_settings();
 }
 
@@ -183,36 +175,6 @@ void SettingsUI::set_autocomplete_engine(JsonValue const& autocomplete_engine)
         WebView::Application::settings().set_autocomplete_engine({});
     else if (autocomplete_engine.is_string())
         WebView::Application::settings().set_autocomplete_engine(autocomplete_engine.as_string());
-}
-
-void SettingsUI::search_for_query(JsonValue const& query)
-{
-    if (!query.is_string())
-        return;
-
-    auto const& search_engine = WebView::Application::settings().search_engine();
-    if (!search_engine.has_value())
-        return;
-
-    auto url_string = search_engine->format_search_query_for_navigation(query.as_string());
-    auto url = URL::Parser::basic_parse(url_string);
-    if (!url.has_value())
-        return;
-
-    WebView::Application::the().open_url_in_new_tab(*url, Web::HTML::ActivateTab::Yes);
-}
-
-void SettingsUI::navigate_from_new_tab(JsonValue const& input)
-{
-    if (!input.is_string())
-        return;
-
-    auto query = input.as_string();
-    auto url = WebView::sanitize_url(query, WebView::Application::settings().search_engine());
-    if (!url.has_value())
-        return;
-
-    WebView::Application::the().open_url_in_new_tab(*url, Web::HTML::ActivateTab::Yes);
 }
 
 enum class SiteSettingType {

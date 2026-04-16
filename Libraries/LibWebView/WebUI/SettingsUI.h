@@ -22,16 +22,13 @@ private:
     void set_new_tab_page_url(JsonValue const&);
     void set_default_zoom_level_factor(JsonValue const&);
     void set_languages(JsonValue const&);
-    void set_show_bookmarks_bar(JsonValue const&);
+    void set_browsing_behavior(JsonValue const&);
 
     void load_available_engines();
     void set_search_engine(JsonValue const&);
     void add_custom_search_engine(JsonValue const&);
     void remove_custom_search_engine(JsonValue const&);
     void set_autocomplete_engine(JsonValue const&);
-
-    void search_for_query(JsonValue const&);
-    void navigate_from_new_tab(JsonValue const&);
 
     void load_forcibly_enabled_site_settings();
     void set_site_setting_enabled_globally(JsonValue const&);

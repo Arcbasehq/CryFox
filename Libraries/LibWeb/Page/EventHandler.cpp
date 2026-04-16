@@ -37,6 +37,7 @@
 #include <LibWeb/Page/AutoScrollHandler.h>
 #include <LibWeb/Page/DragAndDropEventHandler.h>
 #include <LibWeb/Page/EventHandler.h>
+#include <LibWeb/Page/MiddleButtonScrollHandler.h>
 #include <LibWeb/Page/Page.h>
 #include <LibWeb/Painting/ChromeWidget.h>
 #include <LibWeb/Painting/NavigableContainerViewportPaintable.h>
@@ -407,6 +408,8 @@ void EventHandler::process_auto_scroll()
 {
     if (m_auto_scroll_handler)
         m_auto_scroll_handler->perform_tick();
+    if (m_middle_button_scroll_handler)
+        m_middle_button_scroll_handler->perform_tick();
 }
 
 void EventHandler::update_mouse_selection(CSSPixelPoint visual_viewport_position)
@@ -979,9 +982,14 @@ void EventHandler::stop_updating_selection()
 
 EventResult EventHandler::handle_mouseup(CSSPixelPoint visual_viewport_position, CSSPixelPoint screen_position, u32 button, u32 buttons, u32 modifiers)
 {
+    auto middle_button_autoscrolled = m_middle_button_scroll_handler && m_middle_button_scroll_handler->mouse_has_moved_beyond_dead_zone();
+
     ScopeGuard clear_mousedown_tracking_and_stop_selection([&] {
         clear_mousedown_tracking();
         stop_updating_selection();
+
+        if (middle_button_autoscrolled && button == UIEvents::MouseButton::Middle)
+            m_middle_button_scroll_handler = nullptr;
     });
 
     if (should_ignore_device_input_event()) {
@@ -1062,7 +1070,8 @@ EventResult EventHandler::handle_mouseup(CSSPixelPoint visual_viewport_position,
 
     // FIXME: Per spec, the click target should be the nearest common inclusive ancestor of the pointerdown
     //        and pointerup targets. Currently we require an exact match.
-    if (node.ptr() == m_mousedown_target) {
+    // NB: If the middle button was used to scroll, suppress click and activation behavior.
+    if (node.ptr() == m_mousedown_target && !middle_button_autoscrolled) {
         if (fire_click_events(*node, coordinates, screen_position, button, buttons, modifiers, click_count)
             && !chrome_widget) {
             // NB: Event dispatches above may have run JS that invalidated layout.
@@ -1179,6 +1188,32 @@ bool EventHandler::initiate_paragraph_selection(DOM::Document& document, Paintin
 
 void EventHandler::run_mousedown_default_actions(DOM::Document& document, CSSPixelPoint visual_viewport_position, CSSPixelPoint viewport_position, unsigned button, unsigned modifiers, int click_count)
 {
+    if (m_middle_button_scroll_handler) {
+        m_middle_button_scroll_handler = nullptr;
+        return;
+    }
+
+    if (button == UIEvents::MouseButton::Middle) {
+        if (!m_navigable->page().enable_autoscroll())
+            return;
+
+        auto hit = paint_root()->hit_test(visual_viewport_position, Painting::HitTestType::Exact);
+        if (!hit.has_value())
+            return;
+
+        for (GC::Ptr<DOM::Node const> node = hit->paintable->dom_node(); node; node = node->parent_or_shadow_host_node()) {
+            if (is<HTML::FormAssociatedTextControlElement>(*node))
+                return;
+            if (auto const* anchor = as_if<HTML::HTMLAnchorElement>(*node); anchor && anchor->has_attribute(HTML::AttributeNames::href))
+                return;
+        }
+
+        if (auto container = MiddleButtonScrollHandler::find_scrollable_ancestor(document, *hit->paintable))
+            m_middle_button_scroll_handler = make<MiddleButtonScrollHandler>(*container, visual_viewport_position);
+
+        return;
+    }
+
     if (button != UIEvents::MouseButton::Primary)
         return;
 #if defined(AK_OS_MACOS)
@@ -1439,6 +1474,9 @@ EventResult EventHandler::handle_mousemove(CSSPixelPoint visual_viewport_positio
     document->update_layout(DOM::UpdateLayoutReason::EventHandlerHandleMouseMove);
     if (!paint_root())
         return EventResult::Accepted;
+
+    if (m_middle_button_scroll_handler)
+        m_middle_button_scroll_handler->update_mouse_position(visual_viewport_position);
 
     update_mouse_selection(visual_viewport_position);
     return EventResult::Handled;
@@ -1764,6 +1802,12 @@ EventResult EventHandler::handle_keydown(UIEvents::KeyCode key, u32 modifiers, u
     // https://html.spec.whatwg.org/multipage/interaction.html#close-requests
     // FIXME: Close requests should queue a global task on the user interaction task source, given `document`'s relevant global object.
     if (key == UIEvents::KeyCode::Key_Escape) {
+        // NB: Exit autoscroll if active before handling other close requests.
+        if (m_middle_button_scroll_handler) {
+            m_middle_button_scroll_handler = nullptr;
+            return EventResult::Handled;
+        }
+
         // 1. If document's fullscreen element is not null, then:
         if (document->fullscreen()) {
             // 1. Fully exit fullscreen given document's node navigable's top-level traversable's active document.
@@ -2094,6 +2138,8 @@ void EventHandler::visit_edges(JS::Cell::Visitor& visitor) const
     visitor.visit(m_navigable);
     if (m_auto_scroll_handler)
         m_auto_scroll_handler->visit_edges(visitor);
+    if (m_middle_button_scroll_handler)
+        m_middle_button_scroll_handler->visit_edges(visitor);
 }
 
 Unicode::Segmenter& EventHandler::word_segmenter()

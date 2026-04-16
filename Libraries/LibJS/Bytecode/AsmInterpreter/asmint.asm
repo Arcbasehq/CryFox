@@ -12,7 +12,7 @@
 #   dispatch = dispatch table base pointer (256 entries, 8 bytes each)
 #
 # Temporary registers (caller-saved, clobbered by C++ calls):
-#   t0-t9    = general-purpose scratch
+#   t0-t8    = general-purpose scratch
 #   ft0-ft3  = floating-point scratch (scalar double)
 #
 # NaN-boxing encoding:
@@ -351,10 +351,69 @@ macro bitwise_op(op_insn, slow_path_func)
     call_slow_path slow_path_func
 end
 
-# Dispatch using the instruction's m_length field (for variable-length instructions).
-macro dispatch_callbuiltin_size()
-    load32 t0, [pb, pc, m_length]
-    dispatch_variable t0
+# Validate that the callee still points at the expected builtin function.
+# Jumps to fail if the call target has been replaced or is not a function.
+macro validate_callee_builtin(expected_builtin, fail)
+    load_operand t2, m_callee
+    extract_tag t3, t2
+    branch_ne t3, OBJECT_TAG, fail
+    unbox_object t2, t2
+    load8 t3, [t2, OBJECT_FLAGS]
+    and t3, OBJECT_FLAG_IS_FUNCTION
+    branch_zero t3, fail
+    load8 t3, [t2, FUNCTION_OBJECT_BUILTIN_HAS_VALUE]
+    branch_zero t3, fail
+    load8 t3, [t2, FUNCTION_OBJECT_BUILTIN_VALUE]
+    branch_ne t3, expected_builtin, fail
+end
+
+# Load a UTF-16 code unit from a primitive string with resident UTF-16 data.
+# Input:
+#   t2 = PrimitiveString*
+#   t4 = non-negative code-unit index
+# Output:
+#   t0 = zero-extended code unit
+# Clobbers:
+#   t3, t5
+# Jumps to out_of_bounds if index >= string length.
+# Jumps to fail if the string would require resolving deferred data.
+macro load_primitive_string_utf16_code_unit(out_of_bounds, fail)
+    load8 t3, [t2, PRIMITIVE_STRING_DEFERRED_KIND]
+    branch_ne t3, PRIMITIVE_STRING_DEFERRED_KIND_NONE, fail
+
+    load64 t5, [t2, PRIMITIVE_STRING_UTF16_STRING]
+    branch_zero t5, fail
+
+    load8 t3, [t2, PRIMITIVE_STRING_UTF16_SHORT_STRING_BYTE_COUNT_AND_FLAG]
+    and t3, UTF16_SHORT_STRING_FLAG
+    branch_zero t3, .long_storage
+
+    load8 t3, [t2, PRIMITIVE_STRING_UTF16_SHORT_STRING_BYTE_COUNT_AND_FLAG]
+    shr t3, UTF16_SHORT_STRING_BYTE_COUNT_SHIFT_COUNT
+    branch_ge_unsigned t4, t3, out_of_bounds
+    mov t0, t2
+    add t0, PRIMITIVE_STRING_UTF16_SHORT_STRING_STORAGE
+    load8 t0, [t0, t4]
+    jmp .done
+
+.long_storage:
+    load64 t3, [t5, UTF16_STRING_DATA_LENGTH_IN_CODE_UNITS]
+    branch_negative t3, .utf16_storage
+    branch_ge_unsigned t4, t3, out_of_bounds
+    add t5, UTF16_STRING_DATA_STRING_STORAGE
+    load8 t0, [t5, t4]
+    jmp .done
+
+.utf16_storage:
+    shl t3, 1
+    shr t3, 1
+    branch_ge_unsigned t4, t3, out_of_bounds
+    mov t0, t4
+    add t0, t4
+    add t5, UTF16_STRING_DATA_STRING_STORAGE
+    load16 t0, [t5, t0]
+
+.done:
 end
 
 # Dispatch the instruction at current pc (without advancing).
@@ -372,10 +431,9 @@ end
 macro walk_env_chain(m_cache_field, fail_label)
     lea t0, [pb, pc]
     add t0, m_cache_field
-    load32 t1, [t0, ENVIRONMENT_COORDINATE_HOPS]
+    load_pair32 t1, t2, [t0, ENVIRONMENT_COORDINATE_HOPS], [t0, ENVIRONMENT_COORDINATE_INDEX]
     mov t4, ENVIRONMENT_COORDINATE_INVALID
     branch_eq t1, t4, fail_label
-    load32 t2, [t0, ENVIRONMENT_COORDINATE_INDEX]
     load64 t3, [exec_ctx, EXECUTION_CONTEXT_LEXICAL_ENVIRONMENT]
     branch_zero t1, .walk_done
 .walk_loop:
@@ -389,14 +447,42 @@ macro walk_env_chain(m_cache_field, fail_label)
     branch_nonzero t0, fail_label
 end
 
-# Reload pb and values from the current running execution context.
-# Used after inline call/return to switch to the new frame's bytecode.
-# Clobbers t0, t1.
-macro reload_state_from_exec_ctx()
-    reload_exec_ctx
-    load64 t1, [exec_ctx, EXECUTION_CONTEXT_EXECUTABLE]
-    load64 pb, [t1, EXECUTABLE_BYTECODE_DATA]
+# Pop an inline frame and resume the caller without bouncing through C++.
+# The asm-managed JS-to-JS call fast path currently only inlines Call, never
+# CallConstruct, so caller_is_construct is always false for asm-managed inline
+# frames.
+#
+# This mirrors VM::pop_inline_frame():
+#   1. Read the caller's destination register from the callee frame.
+#   2. Publish the caller's resume pc and returned value.
+#   3. Deallocate the callee by rewinding InterpreterStack::top to exec_ctx.
+#   4. Make the caller the running execution context again.
+#   5. Advance execution_generation so WeakRef and similar observers still see
+#      the same boundary they would have seen through the C++ helper.
+#
+# The macro expects exec_ctx/pb/values/pc to still describe the callee frame.
+# Input:
+#   caller_frame = ExecutionContext* of the caller
+#   value_reg = NaN-boxed return value
+# Clobbers:
+#   t2, t3, t4
+macro pop_inline_frame_and_resume(caller_frame, value_reg)
+    load_pair32 t2, t4, [exec_ctx, EXECUTION_CONTEXT_CALLER_RETURN_PC], [exec_ctx, EXECUTION_CONTEXT_CALLER_DST_RAW]
+    store32 [caller_frame, EXECUTION_CONTEXT_PROGRAM_COUNTER], t2
+    lea t3, [caller_frame, SIZEOF_EXECUTION_CONTEXT]
+    store64 [t3, t4, 8], value_reg
+
+    load_vm t3
+    store64 [t3, VM_RUNNING_EXECUTION_CONTEXT], caller_frame
+    store64 [t3, VM_INTERPRETER_STACK_TOP], exec_ctx
+    inc32_mem [t3, VM_EXECUTION_GENERATION]
+
+    mov exec_ctx, caller_frame
+    load64 t3, [exec_ctx, EXECUTION_CONTEXT_EXECUTABLE]
+    load64 pb, [t3, EXECUTABLE_BYTECODE_DATA]
     lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    mov pc, t2
+    dispatch_current
 end
 
 # ============================================================================
@@ -779,48 +865,44 @@ end
 # ============================================================================
 
 handler Return
-    # Check if this is an inline frame (caller_frame != nullptr)
+    # Empty is the internal "no explicit value" marker. Returning it from
+    # bytecode means "return undefined" at the JS level.
+    load_operand t0, m_value
+    mov t2, EMPTY_TAG_SHIFTED
+    branch_ne t0, t2, .value_ready
+    mov t0, UNDEFINED_SHIFTED
+.value_ready:
+    # Inline JS-to-JS calls resume the caller directly from asm. Top-level
+    # returns instead exit back to the outer interpreter entry point.
     load64 t1, [exec_ctx, EXECUTION_CONTEXT_CALLER_FRAME]
     branch_zero t1, .top_level
-    # Inline return: pop the frame via C++ helper, then reload state
-    call_interp asm_pop_inline_frame
-    reload_state_from_exec_ctx
-    # Load the restored caller's program_counter
-    load32 pc, [exec_ctx, EXECUTION_CONTEXT_PROGRAM_COUNTER]
-    dispatch_current
+    pop_inline_frame_and_resume t1, t0
 .top_level:
-    # Top-level return: load value, empty->undefined, store to return_value
-    load_operand t0, m_value
-    mov t1, EMPTY_TAG_SHIFTED
-    branch_ne t0, t1, .store_return
-    mov t0, UNDEFINED_SHIFTED
-.store_return:
+    # Top-level return matches VM::run_executable(): write return_value,
+    # clear the exception slot, and leave the asm interpreter entirely.
     # values[3] = return_value, values[1] = empty (clear exception)
     store64 [values, 24], t0
-    mov t1, EMPTY_TAG_SHIFTED
-    store64 [values, 8], t1
+    store64 [values, 8], t2
     exit
 end
 
 # Like Return, but does not clear the exception register (values[1]).
 # Used at the end of a function body (after all user code).
 handler End
-    # Check if this is an inline frame (caller_frame != nullptr)
+    # End shares the same inline-frame unwind logic as Return. The only
+    # top-level difference is that End preserves the current exception slot.
+    load_operand t0, m_value
+    mov t2, EMPTY_TAG_SHIFTED
+    branch_ne t0, t2, .value_ready
+    mov t0, UNDEFINED_SHIFTED
+.value_ready:
+    # Inline frame: resume the caller immediately.
     load64 t1, [exec_ctx, EXECUTION_CONTEXT_CALLER_FRAME]
     branch_zero t1, .top_level
-    # Inline return: pop the frame via C++ helper, then reload state
-    call_interp asm_pop_inline_frame_end
-    reload_state_from_exec_ctx
-    # Load the restored caller's program_counter
-    load32 pc, [exec_ctx, EXECUTION_CONTEXT_PROGRAM_COUNTER]
-    dispatch_current
+    pop_inline_frame_and_resume t1, t0
 .top_level:
-    # Top-level end: load value, empty->undefined, store to return_value
-    load_operand t0, m_value
-    mov t1, EMPTY_TAG_SHIFTED
-    branch_ne t0, t1, .store_end
-    mov t0, UNDEFINED_SHIFTED
-.store_end:
+    # Top-level end: publish the return value and exit without touching
+    # values[1], since End does not model a user-visible `return` opcode.
     store64 [values, 24], t0
     exit
 end
@@ -1498,20 +1580,17 @@ handler GetById
     load64 t4, [t3, OBJECT_SHAPE]
     # Get PropertyLookupCache* (direct pointer from instruction stream)
     load64 t5, [pb, pc, m_cache]
-    # Check entry[0].shape matches Object's shape (direct pointer compare)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE]
-    branch_ne t0, t4, .try_cache
-    # Check entry[0].prototype (null = own property, non-null = prototype chain)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    # Check entry[0].shape and entry[0].prototype.
+    load_pair64 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    branch_ne t1, t4, .try_cache
     branch_nonzero t0, .proto
     # Check dictionary generation matches
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
+    load_pair32 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     load32 t2, [t4, SHAPE_DICTIONARY_GENERATION]
     branch_ne t0, t2, .try_cache
     # IC hit! Load property value via get_direct (own property)
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
     load64 t5, [t3, OBJECT_NAMED_PROPERTIES]
-    load64 t0, [t5, t0, 8]
+    load64 t0, [t5, t1, 8]
     # Check value is not an accessor
     extract_tag t2, t0
     branch_eq t2, ACCESSOR_TAG, .try_cache
@@ -1525,16 +1604,15 @@ handler GetById
     load8 t2, [t1, PROTOTYPE_CHAIN_VALIDITY_VALID]
     branch_zero t2, .try_cache
     # Check dictionary generation matches
-    load32 t1, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
-    load32 t2, [t4, SHAPE_DICTIONARY_GENERATION]
-    branch_ne t1, t2, .try_cache
+    load_pair32 t2, t1, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
+    load32 t4, [t4, SHAPE_DICTIONARY_GENERATION]
+    branch_ne t1, t4, .try_cache
     # IC hit! Load property value via get_direct (from prototype)
-    load32 t1, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
-    load64 t2, [t0, OBJECT_NAMED_PROPERTIES]
-    load64 t0, [t2, t1, 8]
+    load64 t1, [t0, OBJECT_NAMED_PROPERTIES]
+    load64 t0, [t1, t2, 8]
     # Check value is not an accessor
-    extract_tag t2, t0
-    branch_eq t2, ACCESSOR_TAG, .try_cache
+    extract_tag t1, t0
+    branch_eq t1, ACCESSOR_TAG, .try_cache
     store_operand m_dst, t0
     dispatch_next
 .try_cache:
@@ -1559,25 +1637,22 @@ handler PutById
     load64 t4, [t3, OBJECT_SHAPE]
     # Get PropertyLookupCache* (direct pointer from instruction stream)
     load64 t5, [pb, pc, m_cache]
-    # Check entry[0].shape matches Object's shape (direct pointer compare)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE]
-    branch_ne t0, t4, .try_cache
-    # Check entry[0].prototype is null (own-property store only)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    # Check entry[0].shape and entry[0].prototype.
+    load_pair64 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    branch_ne t1, t4, .try_cache
     branch_nonzero t0, .try_cache
     # Check dictionary generation matches
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
+    load_pair32 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     load32 t2, [t4, SHAPE_DICTIONARY_GENERATION]
     branch_ne t0, t2, .try_cache
     # Check current value at property_offset is not an accessor
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
     load64 t5, [t3, OBJECT_NAMED_PROPERTIES]
-    load64 t2, [t5, t0, 8]
+    load64 t2, [t5, t1, 8]
     extract_tag t4, t2
     branch_eq t4, ACCESSOR_TAG, .try_cache
     # IC hit! Store new value via put_direct
     # Save property offset in t4 before load_operand clobbers t0 (rax)
-    mov t4, t0
+    mov t4, t1
     load_operand t1, m_src
     store64 [t5, t4, 8], t1
     dispatch_next
@@ -1753,20 +1828,17 @@ handler GetLength
     # Non-magical length: IC fast path (same as GetById)
     load64 t4, [t3, OBJECT_SHAPE]
     load64 t5, [pb, pc, m_cache]
-    # Check entry[0].shape matches (direct pointer compare)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE]
-    branch_ne t0, t4, .slow
-    # Check entry[0].prototype is null (own-property only)
-    load64 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    # Check entry[0].shape and entry[0].prototype.
+    load_pair64 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROTOTYPE]
+    branch_ne t1, t4, .slow
     branch_nonzero t0, .slow
     # Check dictionary generation
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
+    load_pair32 t1, t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     load32 t2, [t4, SHAPE_DICTIONARY_GENERATION]
     branch_ne t0, t2, .slow
     # IC hit
-    load32 t0, [t5, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
     load64 t5, [t3, OBJECT_NAMED_PROPERTIES]
-    load64 t0, [t5, t0, 8]
+    load64 t0, [t5, t1, 8]
     extract_tag t2, t0
     branch_eq t2, ACCESSOR_TAG, .slow
     store_operand m_dst, t0
@@ -1795,8 +1867,7 @@ end
 handler GetGlobal
     # Load global_declarative_environment and global_object via realm
     load64 t0, [exec_ctx, EXECUTION_CONTEXT_REALM]
-    load64 t2, [t0, REALM_GLOBAL_OBJECT]
-    load64 t1, [t0, REALM_GLOBAL_DECLARATIVE_ENVIRONMENT]
+    load_pair64 t2, t1, [t0, REALM_GLOBAL_OBJECT], [t0, REALM_GLOBAL_DECLARATIVE_ENVIRONMENT]
     # Get GlobalVariableCache* (direct pointer from instruction stream)
     load64 t3, [pb, pc, m_cache]
     # Check environment_serial_number matches
@@ -1809,13 +1880,12 @@ handler GetGlobal
     load64 t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE]
     branch_ne t0, t4, .try_env_binding
     # Check dictionary generation
-    load32 t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     load32 t5, [t4, SHAPE_DICTIONARY_GENERATION]
+    load_pair32 t4, t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     branch_ne t0, t5, .try_env_binding
     # IC hit! Load property value via get_direct
-    load32 t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
     load64 t5, [t2, OBJECT_NAMED_PROPERTIES]
-    load64 t0, [t5, t0, 8]
+    load64 t0, [t5, t4, 8]
     # Check not accessor
     extract_tag t5, t0
     branch_eq t5, ACCESSOR_TAG, .slow
@@ -1853,8 +1923,7 @@ end
 handler SetGlobal
     # Load global_declarative_environment and global_object via realm
     load64 t0, [exec_ctx, EXECUTION_CONTEXT_REALM]
-    load64 t2, [t0, REALM_GLOBAL_OBJECT]
-    load64 t1, [t0, REALM_GLOBAL_DECLARATIVE_ENVIRONMENT]
+    load_pair64 t2, t1, [t0, REALM_GLOBAL_OBJECT], [t0, REALM_GLOBAL_DECLARATIVE_ENVIRONMENT]
     # Get GlobalVariableCache* (direct pointer from instruction stream)
     load64 t3, [pb, pc, m_cache]
     # Check environment_serial_number matches
@@ -1867,19 +1936,18 @@ handler SetGlobal
     load64 t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_SHAPE]
     branch_ne t0, t4, .try_env_binding
     # Check dictionary generation
-    load32 t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     load32 t5, [t4, SHAPE_DICTIONARY_GENERATION]
+    load_pair32 t4, t0, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET], [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_DICTIONARY_GENERATION]
     branch_ne t0, t5, .try_env_binding
     # IC hit! Load current value to check it's not an accessor
-    load32 t1, [t3, PROPERTY_LOOKUP_CACHE_ENTRY0_PROPERTY_OFFSET]
     load64 t5, [t2, OBJECT_NAMED_PROPERTIES]
-    load64 t4, [t5, t1, 8]
-    extract_tag t4, t4
-    branch_eq t4, ACCESSOR_TAG, .slow
+    load64 t0, [t5, t4, 8]
+    extract_tag t0, t0
+    branch_eq t0, ACCESSOR_TAG, .slow
     # Store new value via put_direct
-    # NB: load_operand clobbers t0, so property offset must be in t1.
-    load_operand t4, m_src
-    store64 [t5, t1, 8], t4
+    # NB: load_operand clobbers t0, so property offset stays in t4.
+    load_operand t0, m_src
+    store64 [t5, t4, 8], t0
     dispatch_next
 .try_env_binding:
     # Check if cache has an environment binding index (global let/const)
@@ -1912,13 +1980,426 @@ handler SetGlobal
 end
 
 handler Call
-    # Try to inline the call
+    # Inline Call in asm for the two callee kinds that can stay in the
+    # dispatch loop without taking the full Call slow path:
+    #
+    #  - ECMAScriptFunctionObject with inline-ready bytecode: build the
+    #    callee frame here and dispatch at pc = 0 of the callee bytecode.
+    #    Cases that need function-environment allocation or sloppy primitive
+    #    this-boxing can't stay in pure asm but also don't want the full
+    #    slow path (which would insert a run_executable() boundary and an
+    #    observable microtask drain), so they detour through the
+    #    asm_try_inline_call helper at .call_interp_inline.
+    #
+    #  - RawNativeFunction: build a callee ExecutionContext here, call the
+    #    stored C++ function pointer directly via call_raw_native, and then
+    #    tear the frame down on return. Exceptions go through a dedicated
+    #    helper that unwinds the callee frame before dispatching to a JS
+    #    handler (see .call_raw_native_exception).
+    #
+    # Everything else — non-functions, NativeJavaScriptBackedFunction,
+    # ECMAScript functions that can't inline, Proxies, ... — falls through
+    # to .call_slow, i.e. asm_slow_path_call.
+    #
+    # High-level flow of the ECMAScript fast path:
+    #   1. Validate the callee and load its shared function metadata.
+    #   2. Bind `this` inline when we can do so without allocations.
+    #   3. Reserve an InterpreterStack frame and populate ExecutionContext.
+    #   4. Materialize [registers | locals | constants | arguments].
+    #   5. Swap VM state over to the callee frame and dispatch at pc = 0.
+    #
+    # Register usage within this handler:
+    #   t3 = callee ECMAScriptFunctionObject*
+    #   t2 = asm-call metadata / later callee ExecutionContext*
+    #   t7 = callee Executable* carried across `this` binding
+    #   t8 = boxed `this` value carried into the callee
+    load_operand t0, m_callee
+    extract_tag t1, t0
+    branch_ne t1, OBJECT_TAG, .call_slow
+    unbox_object t0, t0
+    mov t3, t0
+
+    # Non-functions still go through the normal Call slow path for proper error
+    # reporting. Non-ECMAScript function objects get a RawNativeFunction fast
+    # path attempt before we fully give up.
+    load8 t1, [t3, OBJECT_FLAGS]
+    branch_bits_clear t1, OBJECT_FLAG_IS_FUNCTION, .call_slow
+    branch_bits_clear t1, OBJECT_FLAG_IS_ECMASCRIPT_FUNCTION_OBJECT, .call_try_native
+
+    load64 t2, [t3, ECMASCRIPT_FUNCTION_OBJECT_SHARED_DATA]
+    load_pair64 t7, t2, [t2, SHARED_FUNCTION_INSTANCE_DATA_EXECUTABLE], [t2, SHARED_FUNCTION_INSTANCE_DATA_ASM_CALL_METADATA]
+    branch_bits_clear t2, SHARED_FUNCTION_INSTANCE_DATA_ASM_CALL_METADATA_CAN_INLINE_CALL, .call_slow
+    # NewFunctionEnvironment() allocates and has to stay out of the pure asm
+    # path, but we still preserve inline-call semantics via .call_interp_inline.
+    branch_bits_set t2, SHARED_FUNCTION_INSTANCE_DATA_ASM_CALL_METADATA_FUNCTION_ENVIRONMENT_NEEDED, .call_interp_inline
+
+    # Bind this without allocations. Sloppy primitive this-values still need
+    # ToObject(), so they use the C++ inline-frame helper.
+    #
+    # t8 starts as "empty" to match the normal interpreter behavior for
+    # callees that never observe `this`.
+    mov t8, EMPTY_TAG_SHIFTED
+    branch_bits_clear t2, SHARED_FUNCTION_INSTANCE_DATA_ASM_CALL_METADATA_USES_THIS, .this_ready
+    load_operand t8, m_this_value
+    branch_bits_set t2, SHARED_FUNCTION_INSTANCE_DATA_ASM_CALL_METADATA_STRICT, .this_ready
+
+    # Sloppy null/undefined binds the callee realm's global object.
+    # Sloppy primitive receivers need ToObject(), which may allocate wrappers,
+    # so they go through the helper instead of the full Call slow path.
+    extract_tag t1, t8
+    mov t0, t1
+    and t0, 0xFFFE
+    branch_eq t0, UNDEFINED_TAG, .sloppy_global_this
+    branch_eq t1, OBJECT_TAG, .this_ready
+    jmp .call_interp_inline
+
+.sloppy_global_this:
+    load64 t1, [t3, OBJECT_SHAPE]
+    load64 t1, [t1, SHAPE_REALM]
+    load64 t1, [t1, REALM_GLOBAL_ENVIRONMENT]
+    load64 t1, [t1, GLOBAL_ENVIRONMENT_GLOBAL_THIS_VALUE]
+    # Match Value(Object*): keep only the low 48 pointer bits before boxing.
+    shl t1, 16
+    shr t1, 16
+    mov t8, OBJECT_TAG_SHIFTED
+    or t8, t1
+
+.this_ready:
+    # The low 32 bits of the packed metadata word hold the formal parameter count.
+    and t2, 0xFFFFFFFF
+
+    load32 t6, [pb, pc, m_argument_count]
+    mov t4, t2
+    branch_ge_unsigned t4, t6, .arg_count_ready
+    mov t4, t6
+.arg_count_ready:
+    load_pair32 t5, t1, [t7, EXECUTABLE_REGISTERS_AND_LOCALS_COUNT], [t7, EXECUTABLE_REGISTERS_AND_LOCALS_AND_CONSTANTS_COUNT]
+
+    # Inline InterpreterStack::allocate().
+    # t1 = total Value slots, t2 = new stack top, t6 = current frame base.
+    add t1, t4
+    mov t2, t1
+    shl t2, 3
+    add t2, SIZEOF_EXECUTION_CONTEXT
+
+    load_vm t0
+    lea t0, [t0, VM_INTERPRETER_STACK]
+    load_pair64 t6, t0, [t0, INTERPRETER_STACK_TOP], [t0, INTERPRETER_STACK_LIMIT]
+    add t2, t6
+    branch_ge_unsigned t0, t2, .stack_ok
+    jmp .call_slow
+
+.stack_ok:
+    load_vm t0
+    store64 [t0, VM_INTERPRETER_STACK_TOP], t2
+
+    # Set up the callee ExecutionContext header exactly the way
+    # VM::push_inline_frame() / run_executable() would see it.
+    mov t2, t6
+    lea t6, [t6, SIZEOF_EXECUTION_CONTEXT]
+    store_pair32 [t2, EXECUTION_CONTEXT_REGISTERS_AND_CONSTANTS_AND_LOCALS_AND_ARGUMENTS_COUNT], [t2, EXECUTION_CONTEXT_ARGUMENT_COUNT], t1, t4
+    load32 t0, [pb, pc, m_argument_count]
+    store32 [t2, EXECUTION_CONTEXT_PASSED_ARGUMENT_COUNT], t0
+
+    load64 t0, [t3, OBJECT_SHAPE]
+    load64 t0, [t0, SHAPE_REALM]
+    store_pair64 [t2, EXECUTION_CONTEXT_FUNCTION], [t2, EXECUTION_CONTEXT_REALM], t3, t0
+
+    load_pair64 t0, t1, [t3, ECMASCRIPT_FUNCTION_OBJECT_ENVIRONMENT], [t3, ECMASCRIPT_FUNCTION_OBJECT_PRIVATE_ENVIRONMENT]
+    store_pair64 [t2, EXECUTION_CONTEXT_LEXICAL_ENVIRONMENT], [t2, EXECUTION_CONTEXT_VARIABLE_ENVIRONMENT], t0, t0
+    store64 [t2, EXECUTION_CONTEXT_PRIVATE_ENVIRONMENT], t1
+    store_pair64 [t2, EXECUTION_CONTEXT_THIS_VALUE], [t2, EXECUTION_CONTEXT_EXECUTABLE], t8, t7
+
+    mov t1, EMPTY_TAG_SHIFTED
+    store_pair64 [t6, ACCUMULATOR_REG_OFFSET], [t6, EXCEPTION_REG_OFFSET], t1, t1
+    store64 [t6, THIS_VALUE_REG_OFFSET], t8
+    store_pair64 [t6, RETURN_VALUE_REG_OFFSET], [t6, SAVED_LEXICAL_ENVIRONMENT_REG_OFFSET], t1, t1
+
+    # ScriptOrModule is a two-word Variant in ExecutionContext, so copy both
+    # machine words explicitly.
+    lea t0, [t2, EXECUTION_CONTEXT_SCRIPT_OR_MODULE]
+    lea t7, [t3, ECMASCRIPT_FUNCTION_OBJECT_SCRIPT_OR_MODULE]
+    load_pair64 t3, t8, [t7, 0], [t7, 8]
+    store64 [t0, 0], t3
+    store64 [t0, 8], t8
+
+    store32 [t2, EXECUTION_CONTEXT_PROGRAM_COUNTER], 0
+    store32 [t2, EXECUTION_CONTEXT_SKIP_WHEN_DETERMINING_INCUMBENT_COUNTER], 0
+    mov t0, EXECUTION_CONTEXT_NO_YIELD_CONTINUATION
+    store32 [t2, EXECUTION_CONTEXT_YIELD_CONTINUATION], t0
+    store8 [t2, EXECUTION_CONTEXT_YIELD_IS_AWAIT], 0
+    store8 [t2, EXECUTION_CONTEXT_CALLER_IS_CONSTRUCT], 0
+    store64 [t2, EXECUTION_CONTEXT_CALLER_FRAME], exec_ctx
+    load_pair32 t0, t1, [pb, pc, m_length], [pb, pc, m_dst]
+    lea t3, [pb, pc]
+    sub t3, pb
+    add t0, t3
+    store_pair32 [t2, EXECUTION_CONTEXT_CALLER_RETURN_PC], [t2, EXECUTION_CONTEXT_CALLER_DST_RAW], t0, t1
+
+    # values = [registers | locals | constants | arguments]
+    # Keep t2 at the ExecutionContext base while t6 walks the Value tail.
+    mov t0, t5
+    shl t0, 3
+    mov t3, RESERVED_REGISTERS_SIZE
+.clear_registers_and_locals:
+    mov t8, t3
+    add t8, 8
+    branch_ge_unsigned t8, t0, .clear_registers_and_locals_tail
+    store_pair64 [t6, t3, 0], [t6, t3, 8], t1, t1
+    add t3, 16
+    jmp .clear_registers_and_locals
+
+.clear_registers_and_locals_tail:
+    branch_ge_unsigned t3, t0, .copy_constants
+    store64 [t6, t3], t1
+
+.copy_constants:
+    load64 t0, [t2, EXECUTION_CONTEXT_EXECUTABLE]
+    load_pair64 t3, t0, [t0, EXECUTABLE_ASM_CONSTANTS_SIZE], [t0, EXECUTABLE_ASM_CONSTANTS_DATA]
+    mov t1, t5
+    xor t8, t8
+.copy_constants_loop:
+    branch_ge_unsigned t8, t3, .copy_arguments
+    load64 t7, [t0, t8, 8]
+    store64 [t6, t1, 8], t7
+    add t8, 1
+    add t1, 1
+    jmp .copy_constants_loop
+
+.copy_arguments:
+    load32 t7, [pb, pc, m_argument_count]
+    mov t1, t5
+    add t1, t3
+    lea t0, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    lea t8, [pb, pc]
+    add t8, m_expression_string
+    add t8, 4
+    xor t3, t3
+.copy_arguments_loop:
+    # The operand array in the bytecode stores caller register indices.
+    branch_ge_unsigned t3, t7, .fill_missing_arguments
+    load32 t5, [t8, t3, 4]
+    load64 t5, [t0, t5, 8]
+    store64 [t6, t1, 8], t5
+    add t3, 1
+    add t1, 1
+    jmp .copy_arguments_loop
+
+.fill_missing_arguments:
+    mov t3, t1
+    add t3, t4
+    sub t3, t7
+    mov t0, UNDEFINED_SHIFTED
+.fill_missing_arguments_loop:
+    branch_ge_unsigned t1, t3, .enter_callee
+    store64 [t6, t1, 8], t0
+    add t1, 1
+    jmp .fill_missing_arguments_loop
+
+.enter_callee:
+    load64 pb, [t2, EXECUTION_CONTEXT_EXECUTABLE]
+    load64 pb, [pb, EXECUTABLE_BYTECODE_DATA]
+    load_vm t0
+    store64 [t0, VM_RUNNING_EXECUTION_CONTEXT], t2
+    mov exec_ctx, t2
+    lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    xor pc, pc
+    goto_handler pc
+.call_interp_inline:
+    # Shared escape hatch for the cases that need C++ help to build the inline
+    # frame correctly but must not take the full Call slow path, since that
+    # would insert a run_executable() boundary and observable microtask drain.
     call_interp asm_try_inline_call
     branch_nonzero t0, .call_slow
-    # Success: reload pb/values from new execution context, pc=0
-    reload_state_from_exec_ctx
+    load_vm t0
+    load64 exec_ctx, [t0, VM_RUNNING_EXECUTION_CONTEXT]
+    lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    load64 t0, [exec_ctx, EXECUTION_CONTEXT_EXECUTABLE]
+    load64 pb, [t0, EXECUTABLE_BYTECODE_DATA]
     xor pc, pc
-    dispatch_current
+    goto_handler pc
+.call_try_native:
+    # Fast path for RawNativeFunction: the callee is a plain C++ function
+    # pointer with no JS-visible prologue, so we can build the callee frame
+    # ourselves and jump straight at the entry point. NativeFunction objects
+    # that still carry a callback (NativeJavaScriptBackedFunction) do not have
+    # this flag set and fall through to .call_slow.
+    load8 t0, [t3, OBJECT_FLAGS]
+    branch_bits_clear t0, OBJECT_FLAG_IS_RAW_NATIVE_FUNCTION, .call_slow
+
+    # Unlike the ECMAScript path we don't pad to the formal parameter count:
+    # native functions read their arguments via the passed-count API, so we
+    # only need space for the call-site arguments plus the ExecutionContext
+    # header. t4 = argument count, t5 = total bytes needed for this frame.
+    load32 t4, [pb, pc, m_argument_count]
+    mov t5, t4
+    shl t5, 3
+    add t5, SIZEOF_EXECUTION_CONTEXT
+
+    # Inline InterpreterStack::allocate(): bail to C++ if the interpreter
+    # stack doesn't have room for the new frame. t6 = new frame base (old
+    # top), t5 becomes the new top after the add below.
+    load_vm t0
+    lea t0, [t0, VM_INTERPRETER_STACK]
+    load_pair64 t6, t7, [t0, INTERPRETER_STACK_TOP], [t0, INTERPRETER_STACK_LIMIT]
+    add t5, t6
+    branch_ge_unsigned t7, t5, .native_interpreter_stack_ok
+    jmp .call_slow
+
+.native_interpreter_stack_ok:
+    # RawNativeFunctions run real C++ code on the host stack, so we also have
+    # to check that we're not about to blow past the VM's reserved stack
+    # limit. The ECMAScript path can skip this because it never leaves asm.
+    load_vm t0
+    lea t0, [t0, VM_STACK_INFO]
+    load64 t7, [t0, STACK_INFO_BASE]
+    add t7, VM_STACK_SPACE_LIMIT
+    branch_ge_unsigned fp, t7, .native_stack_space_ok
+    jmp .call_slow
+
+.native_stack_space_ok:
+    # Commit the new interpreter stack top. From here on we own [t6, t5).
+    load_vm t0
+    store64 [t0, VM_INTERPRETER_STACK_TOP], t5
+
+    # Populate the callee ExecutionContext to match what VM::push_execution_context
+    # plus NativeFunction::internal_call would produce. t2 tracks the EC
+    # header, t6 advances to the argument Value array that follows it.
+    mov t2, t6
+    lea t6, [t6, SIZEOF_EXECUTION_CONTEXT]
+    # For natives, argument_count and "registers+..." total are both just the
+    # call-site argument count: there are no registers, locals, or constants.
+    store_pair32 [t2, EXECUTION_CONTEXT_REGISTERS_AND_CONSTANTS_AND_LOCALS_AND_ARGUMENTS_COUNT], [t2, EXECUTION_CONTEXT_ARGUMENT_COUNT], t4, t4
+    store32 [t2, EXECUTION_CONTEXT_PASSED_ARGUMENT_COUNT], t4
+
+    # Shape stores a Realm pointer; use it as the callee EC realm.
+    load64 t0, [t3, OBJECT_SHAPE]
+    load64 t0, [t0, SHAPE_REALM]
+    store_pair64 [t2, EXECUTION_CONTEXT_FUNCTION], [t2, EXECUTION_CONTEXT_REALM], t3, t0
+
+    # Mirror NativeFunction::internal_call: a raw native has no environment of
+    # its own, so lexical/variable/private environments are copied straight
+    # from the caller frame.
+    load_pair64 t0, t7, [exec_ctx, EXECUTION_CONTEXT_LEXICAL_ENVIRONMENT], [exec_ctx, EXECUTION_CONTEXT_VARIABLE_ENVIRONMENT]
+    store_pair64 [t2, EXECUTION_CONTEXT_LEXICAL_ENVIRONMENT], [t2, EXECUTION_CONTEXT_VARIABLE_ENVIRONMENT], t0, t7
+    load64 t0, [exec_ctx, EXECUTION_CONTEXT_PRIVATE_ENVIRONMENT]
+    store64 [t2, EXECUTION_CONTEXT_PRIVATE_ENVIRONMENT], t0
+    # |this| is forwarded unchanged. Native builtins do their own type checks
+    # on the receiver where they need to.
+    load_operand t0, m_this_value
+    store64 [t2, EXECUTION_CONTEXT_THIS_VALUE], t0
+
+    # Zero out the ScriptOrModule variant (two words) and Executable pointer.
+    # Native frames don't belong to any script/module and have no bytecode.
+    xor t0, t0
+    lea t7, [t2, EXECUTION_CONTEXT_SCRIPT_OR_MODULE]
+    store_pair64 [t7, 0], [t7, 8], t0, t0
+    store64 [t2, EXECUTION_CONTEXT_EXECUTABLE], t0
+    store32 [t2, EXECUTION_CONTEXT_PROGRAM_COUNTER], 0
+    store32 [t2, EXECUTION_CONTEXT_SKIP_WHEN_DETERMINING_INCUMBENT_COUNTER], 0
+    mov t0, EXECUTION_CONTEXT_NO_YIELD_CONTINUATION
+    store32 [t2, EXECUTION_CONTEXT_YIELD_CONTINUATION], t0
+    store8 [t2, EXECUTION_CONTEXT_YIELD_IS_AWAIT], 0
+    store8 [t2, EXECUTION_CONTEXT_CALLER_IS_CONSTRUCT], 0
+
+    # While asm runs, the authoritative program counter lives in the `pc`
+    # register and the caller EC's stored program_counter is stale. Before we
+    # leave asm to run native C++ that may throw, sync `pc` into the caller
+    # EC as a bytecode offset (pc - pb). asm_helper_handle_raw_native_exception
+    # and VM::handle_exception both read from the caller EC after unwind.
+    lea t7, [pb, pc]
+    sub t7, pb
+    store32 [exec_ctx, EXECUTION_CONTEXT_PROGRAM_COUNTER], t7
+    store64 [t2, EXECUTION_CONTEXT_CALLER_FRAME], exec_ctx
+    # CALLER_RETURN_PC is the bytecode offset of the instruction after the
+    # Call (Call offset + Call length). CALLER_DST_RAW records where the
+    # return value should be written in the caller's value array.
+    load32 t0, [pb, pc, m_length]
+    add t0, t7
+    store32 [t2, EXECUTION_CONTEXT_CALLER_RETURN_PC], t0
+    load32 t0, [pb, pc, m_dst]
+    store32 [t2, EXECUTION_CONTEXT_CALLER_DST_RAW], t0
+
+    # Copy the call-site arguments from the caller's value array into the
+    # callee frame's argument tail. t0 points at the caller's value array,
+    # t8 at the Operand[] that trails the fixed Call instruction fields.
+    # The Call layout ends with `m_expression_string: Optional<StringTableIndex>`
+    # (4 bytes via the sentinel specialization) followed by `m_arguments`, so
+    # base + offsetof(m_expression_string) + 4 is the operand array.
+    lea t0, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    lea t8, [pb, pc]
+    add t8, m_expression_string
+    add t8, 4
+    xor t7, t7
+.copy_native_arguments_loop:
+    branch_ge_unsigned t7, t4, .enter_raw_native
+    load32 t5, [t8, t7, 4]
+    load64 t5, [t0, t5, 8]
+    store64 [t6, t7, 8], t5
+    add t7, 1
+    jmp .copy_native_arguments_loop
+
+.enter_raw_native:
+    # Swap the running ExecutionContext over to the callee and point the
+    # asm `values` register at its argument array. After this, we look like
+    # a normal inline frame from the VM's perspective.
+    load_vm t0
+    store64 [t0, VM_RUNNING_EXECUTION_CONTEXT], t2
+    mov exec_ctx, t2
+    lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+
+    # Invoke the raw C++ function pointer. call_raw_native lowers to a native
+    # call through the platform ABI and surfaces the returned
+    # ThrowCompletionOr<Value> via (t0, t1): t0 is the Value payload and t1
+    # holds the Variant discriminator in its low byte (0 = Value, 1 =
+    # ErrorValue). Anything non-zero in that byte means the native threw and
+    # t0 is the thrown Value, not a return value.
+    load64 t3, [t3, RAW_NATIVE_FUNCTION_NATIVE_FUNCTION]
+    call_raw_native t3
+    and t1, 0xFF
+    branch_nonzero t1, .call_raw_native_exception
+
+    # Normal return path: tear the callee frame off the interpreter stack,
+    # restore the caller as the running ExecutionContext, write the return
+    # value into the caller's m_dst operand, and dispatch the next insn.
+    load64 t2, [exec_ctx, EXECUTION_CONTEXT_CALLER_FRAME]
+    load_vm t3
+    store64 [t3, VM_RUNNING_EXECUTION_CONTEXT], t2
+    store64 [t3, VM_INTERPRETER_STACK_TOP], exec_ctx
+    mov exec_ctx, t2
+    lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    store_operand m_dst, t0
+    load32 t0, [pb, pc, m_length]
+    dispatch_variable t0
+
+.call_raw_native_exception:
+    # The native threw. Hand the thrown Value off to a C++ helper, which
+    # unwinds the callee frame off the interpreter stack and calls through
+    # to VM::handle_exception. Return value (t0) follows the standard asm
+    # slow-path convention (see AsmInterpreter.cpp:127):
+    #   >= 0 : an enclosing handler was found; t0 is the new program counter
+    #          to resume at inside the (post-unwind) running execution context.
+    #    < 0 : no handler; bail out of the asm dispatch loop entirely.
+    mov t1, t0
+    call_helper asm_helper_handle_raw_native_exception
+    branch_negative t0, .call_exit_asm
+    jmp .call_exception_handled
+.call_exception_handled:
+    # Reload exec_ctx/values/pb/pc from the caller frame the helper left us
+    # on, and resume dispatching at its program_counter (which the helper
+    # already updated to the handler entry).
+    load_vm t0
+    load64 exec_ctx, [t0, VM_RUNNING_EXECUTION_CONTEXT]
+    lea values, [exec_ctx, SIZEOF_EXECUTION_CONTEXT]
+    load64 t0, [exec_ctx, EXECUTION_CONTEXT_EXECUTABLE]
+    load64 pb, [t0, EXECUTABLE_BYTECODE_DATA]
+    load32 t2, [exec_ctx, EXECUTION_CONTEXT_PROGRAM_COUNTER]
+    mov pc, t2
+    goto_handler pc
+.call_exit_asm:
+    # No JS handler caught the native exception; bail out of the asm
+    # dispatch loop and let the C++ caller of run_asm() see the throw.
+    exit
 .call_slow:
     call_slow_path asm_slow_path_call
 end
@@ -1926,39 +2407,14 @@ end
 # Fast paths for common Math builtins with a single double argument.
 # Before using the fast path, we validate that the callee is still the
 # original builtin function (user code may have reassigned e.g. Math.abs).
-handler CallBuiltin
-    # Validate the callee: must be an object with IsFunction flag,
-    # must have m_builtin set, and the builtin must match the instruction's.
-    load_operand t2, m_callee
-    extract_tag t3, t2
-    branch_ne t3, OBJECT_TAG, .slow
-    # Extract raw Object*
-    unbox_object t2, t2
-    # Check IsFunction flag
-    load8 t3, [t2, OBJECT_FLAGS]
-    and t3, OBJECT_FLAG_IS_FUNCTION
-    branch_zero t3, .slow
-    # Check FunctionObject::m_builtin.has_value()
-    load8 t3, [t2, FUNCTION_OBJECT_BUILTIN_HAS_VALUE]
-    branch_zero t3, .slow
-    # Compare FunctionObject::m_builtin value with instruction's m_builtin
-    load8 t3, [t2, FUNCTION_OBJECT_BUILTIN_VALUE]
-    load8 t4, [pb, pc, m_builtin]
-    branch_ne t3, t4, .slow
-    # Callee validated. Now dispatch on the builtin enum (already in t4).
-    branch_eq t4, BUILTIN_MATH_ABS, .math_abs
-    branch_eq t4, BUILTIN_MATH_FLOOR, .math_floor
-    branch_eq t4, BUILTIN_MATH_CEIL, .math_ceil
-    branch_eq t4, BUILTIN_MATH_SQRT, .math_sqrt
-    branch_eq t4, BUILTIN_MATH_EXP, .math_exp
-    jmp .slow
-.math_abs:
-    load_operand t1, m_arguments
+handler CallBuiltinMathAbs
+    validate_callee_builtin BUILTIN_MATH_ABS, .slow
+    load_operand t1, m_argument
     check_is_double t1, .try_abs_int32
     # abs(double) = clear sign bit (bit 63)
     clear_bit t1, 63
     store_operand m_dst, t1
-    dispatch_callbuiltin_size
+    dispatch_next
 .try_abs_int32:
     extract_tag t3, t1
     branch_ne t3, INT32_TAG, .slow
@@ -1969,7 +2425,7 @@ handler CallBuiltin
 .abs_positive:
     box_int32_clean t4, t3
     store_operand m_dst, t4
-    dispatch_callbuiltin_size
+    dispatch_next
 .abs_overflow:
     # INT32_MIN: abs(-2147483648) = 2147483648.0
     unbox_int32 t3, t1
@@ -1977,40 +2433,209 @@ handler CallBuiltin
     int_to_double ft0, t3
     fp_mov t4, ft0
     store_operand m_dst, t4
-    dispatch_callbuiltin_size
-.math_floor:
-    load_operand t1, m_arguments
+    dispatch_next
+.slow:
+    call_slow_path asm_slow_path_call_builtin_math_abs
+end
+
+handler CallBuiltinMathFloor
+    validate_callee_builtin BUILTIN_MATH_FLOOR, .slow
+    load_operand t1, m_argument
     check_is_double t1, .slow
     fp_mov ft0, t1
     fp_floor ft0, ft0
     box_double_or_int32 t5, ft0
     store_operand m_dst, t5
-    dispatch_callbuiltin_size
-.math_ceil:
-    load_operand t1, m_arguments
+    dispatch_next
+.slow:
+    call_slow_path asm_slow_path_call_builtin_math_floor
+end
+
+handler CallBuiltinMathCeil
+    validate_callee_builtin BUILTIN_MATH_CEIL, .slow
+    load_operand t1, m_argument
     check_is_double t1, .slow
     fp_mov ft0, t1
     fp_ceil ft0, ft0
     box_double_or_int32 t5, ft0
     store_operand m_dst, t5
-    dispatch_callbuiltin_size
-.math_sqrt:
-    load_operand t1, m_arguments
+    dispatch_next
+.slow:
+    call_slow_path asm_slow_path_call_builtin_math_ceil
+end
+
+handler CallBuiltinMathSqrt
+    validate_callee_builtin BUILTIN_MATH_SQRT, .slow
+    load_operand t1, m_argument
     check_is_double t1, .slow
     fp_mov ft0, t1
     fp_sqrt ft0, ft0
     box_double_or_int32 t5, ft0
     store_operand m_dst, t5
-    dispatch_callbuiltin_size
-.math_exp:
-    load_operand t1, m_arguments
+    dispatch_next
+.slow:
+    call_slow_path asm_slow_path_call_builtin_math_sqrt
+end
+
+handler CallBuiltinMathExp
+    validate_callee_builtin BUILTIN_MATH_EXP, .slow
+    load_operand t1, m_argument
     check_is_double t1, .slow
     fp_mov ft0, t1
     call_helper asm_helper_math_exp
     store_operand m_dst, t0
-    dispatch_callbuiltin_size
+    dispatch_next
 .slow:
-    call_slow_path asm_slow_path_call_builtin
+    call_slow_path asm_slow_path_call_builtin_math_exp
+end
+
+handler CallBuiltinMathLog
+    call_slow_path asm_slow_path_call_builtin_math_log
+end
+
+handler CallBuiltinMathPow
+    call_slow_path asm_slow_path_call_builtin_math_pow
+end
+
+handler CallBuiltinMathImul
+    call_slow_path asm_slow_path_call_builtin_math_imul
+end
+
+handler CallBuiltinMathRandom
+    call_slow_path asm_slow_path_call_builtin_math_random
+end
+
+handler CallBuiltinMathRound
+    call_slow_path asm_slow_path_call_builtin_math_round
+end
+
+handler CallBuiltinMathSin
+    call_slow_path asm_slow_path_call_builtin_math_sin
+end
+
+handler CallBuiltinMathCos
+    call_slow_path asm_slow_path_call_builtin_math_cos
+end
+
+handler CallBuiltinMathTan
+    call_slow_path asm_slow_path_call_builtin_math_tan
+end
+
+handler CallBuiltinRegExpPrototypeExec
+    call_slow_path asm_slow_path_call_builtin_regexp_prototype_exec
+end
+
+handler CallBuiltinRegExpPrototypeReplace
+    call_slow_path asm_slow_path_call_builtin_regexp_prototype_replace
+end
+
+handler CallBuiltinRegExpPrototypeSplit
+    call_slow_path asm_slow_path_call_builtin_regexp_prototype_split
+end
+
+handler CallBuiltinOrdinaryHasInstance
+    call_slow_path asm_slow_path_call_builtin_ordinary_has_instance
+end
+
+handler CallBuiltinArrayIteratorPrototypeNext
+    call_slow_path asm_slow_path_call_builtin_array_iterator_prototype_next
+end
+
+handler CallBuiltinMapIteratorPrototypeNext
+    call_slow_path asm_slow_path_call_builtin_map_iterator_prototype_next
+end
+
+handler CallBuiltinSetIteratorPrototypeNext
+    call_slow_path asm_slow_path_call_builtin_set_iterator_prototype_next
+end
+
+handler CallBuiltinStringIteratorPrototypeNext
+    call_slow_path asm_slow_path_call_builtin_string_iterator_prototype_next
+end
+
+handler CallBuiltinStringFromCharCode
+    validate_callee_builtin BUILTIN_STRING_FROM_CHAR_CODE, .slow
+
+    load_operand t1, m_argument
+    extract_tag t3, t1
+    branch_ne t3, INT32_TAG, .slow
+    unbox_int32 t0, t1
+    and t0, 0xffff
+    branch_ge_unsigned t0, 0x80, .single_code_unit
+
+    mov t1, t0
+    call_helper asm_helper_single_ascii_character_string
+    store_operand m_dst, t0
+    dispatch_next
+
+.single_code_unit:
+    mov t1, t0
+    call_helper asm_helper_single_utf16_code_unit_string
+    store_operand m_dst, t0
+    dispatch_next
+
+.slow:
+    call_slow_path asm_slow_path_call_builtin_string_from_char_code
+end
+
+handler CallBuiltinStringPrototypeCharCodeAt
+    validate_callee_builtin BUILTIN_STRING_PROTOTYPE_CHAR_CODE_AT, .slow
+
+    load_operand t1, m_this_value
+    extract_tag t3, t1
+    branch_ne t3, STRING_TAG, .slow
+    unbox_object t2, t1
+
+    load_operand t1, m_argument
+    extract_tag t3, t1
+    branch_ne t3, INT32_TAG, .slow
+    unbox_int32 t4, t1
+    branch_negative t4, .out_of_bounds
+
+    load_primitive_string_utf16_code_unit .out_of_bounds, .slow
+    box_int32_clean t1, t0
+    store_operand m_dst, t1
+    dispatch_next
+
+.out_of_bounds:
+    mov t0, CANON_NAN_BITS
+    store_operand m_dst, t0
+    dispatch_next
+
+.slow:
+    call_slow_path asm_slow_path_call_builtin_string_prototype_char_code_at
+end
+
+handler CallBuiltinStringPrototypeCharAt
+    validate_callee_builtin BUILTIN_STRING_PROTOTYPE_CHAR_AT, .slow
+
+    load_operand t1, m_this_value
+    extract_tag t3, t1
+    branch_ne t3, STRING_TAG, .slow
+    unbox_object t2, t1
+
+    load_operand t1, m_argument
+    extract_tag t3, t1
+    branch_ne t3, INT32_TAG, .slow
+    unbox_int32 t4, t1
+    branch_negative t4, .empty
+
+    load_primitive_string_utf16_code_unit .empty, .slow
+    branch_ge_unsigned t0, 0x80, .slow
+
+    mov t1, t0
+    call_helper asm_helper_single_ascii_character_string
+    store_operand m_dst, t0
+    dispatch_next
+
+.empty:
+    mov t1, 0
+    call_helper asm_helper_empty_string
+    store_operand m_dst, t0
+    dispatch_next
+
+.slow:
+    call_slow_path asm_slow_path_call_builtin_string_prototype_char_at
 end
 
 # ============================================================================
@@ -2039,9 +2664,8 @@ handler ObjectPropertyIteratorNext
     # These guards mirror PropertyNameIterator::fast_path_still_valid(). If the
     # receiver or prototype chain no longer matches the cached snapshot, we drop
     # to C++ and continue in deoptimized mode for the rest of the enumeration.
-    load64 t5, [t3, PROPERTY_NAME_ITERATOR_PROPERTY_CACHE]
+    load_pair64 t5, t7, [t3, PROPERTY_NAME_ITERATOR_PROPERTY_CACHE], [t3, PROPERTY_NAME_ITERATOR_SHAPE]
     load64 t6, [t3, PROPERTY_NAME_ITERATOR_OBJECT]
-    load64 t7, [t3, PROPERTY_NAME_ITERATOR_SHAPE]
     load64 t8, [t6, OBJECT_SHAPE]
     branch_ne t8, t7, .slow
 
@@ -2070,8 +2694,7 @@ handler ObjectPropertyIteratorNext
 .next_key:
     # property_values is laid out as:
     #   [receiver packed index keys..., flattened named keys...]
-    load32 t0, [t3, PROPERTY_NAME_ITERATOR_NEXT_INDEXED_PROPERTY]
-    load32 t2, [t3, PROPERTY_NAME_ITERATOR_INDEXED_PROPERTY_COUNT]
+    load_pair32 t2, t0, [t3, PROPERTY_NAME_ITERATOR_INDEXED_PROPERTY_COUNT], [t3, PROPERTY_NAME_ITERATOR_NEXT_INDEXED_PROPERTY]
     branch_ge_unsigned t0, t2, .named
     load64 t8, [t5, OBJECT_PROPERTY_ITERATOR_CACHE_DATA_PROPERTY_VALUES_DATA]
     load64 t8, [t8, t0, 8]
@@ -2085,7 +2708,6 @@ handler ObjectPropertyIteratorNext
 .named:
     load64 t0, [t3, PROPERTY_NAME_ITERATOR_NEXT_PROPERTY]
     load64 t8, [t5, OBJECT_PROPERTY_ITERATOR_CACHE_DATA_PROPERTY_VALUES_SIZE]
-    load32 t2, [t3, PROPERTY_NAME_ITERATOR_INDEXED_PROPERTY_COUNT]
     sub t8, t2
     branch_ge_unsigned t0, t8, .done
     mov t8, t0
